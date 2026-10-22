@@ -7,7 +7,8 @@ from playwright.sync_api import sync_playwright
 glb, out = os.path.abspath(sys.argv[1]), sys.argv[2]
 clay = "clay" in sys.argv[3:]
 alpha = "alpha" in sys.argv[3:]   # transparent background (icons)
-single = "single" in sys.argv[3:]  # one 1000x1000 view instead of three
+single = "single" in sys.argv[3:]  # one square view instead of three (RENDER_SIZE, default 1000 px)
+SIZE = int(os.environ.get("RENDER_SIZE", "1000"))
 rotx = next((float(a) for a in sys.argv[3:] if a.lstrip("-").replace(".", "").isdigit()), 0.0)
 d = os.path.dirname(glb)
 H = functools.partial(http.server.SimpleHTTPRequestHandler, directory=d)
@@ -37,19 +38,19 @@ const views=NV==1?[[-0.6,0]]:[[-0.8,0],[0.3,0],[2.3,0]];
 const sc=[];r.setScissorTest(true);
 views.forEach((v,i)=>{pivot.rotation.y=v[0];const x=i*(W/NV);r.setViewport(x,0,W/NV,Hh);r.setScissor(x,0,W/NV,Hh);r.render(scene,cam);});
 window.DONE=true;
-</script>""".replace("%BG%", "transparent" if alpha else "#eceef1").replace("%W%", "1000" if single else "1800").replace("%H%", "1000" if single else "600").replace("%ALPHA%", "true" if alpha else "false").replace("%DIST%", os.environ.get("RENDER_DIST", "2.55")).replace("%NV%", "1" if single else "3").replace("%CLAY%", "true" if clay else "false").replace("%ROTX%", str(rotx))
+</script>""".replace("%BG%", "transparent" if alpha else "#eceef1").replace("%W%", str(SIZE) if single else "1800").replace("%H%", str(SIZE) if single else "600").replace("%ALPHA%", "true" if alpha else "false").replace("%DIST%", os.environ.get("RENDER_DIST", "2.55")).replace("%NV%", "1" if single else "3").replace("%CLAY%", "true" if clay else "false").replace("%ROTX%", str(rotx))
 open(os.path.join(d, "_render.html"), "w").write(html)
 os.replace(glb, os.path.join(d, "model.glb")) if False else None
 import shutil; shutil.copyfile(glb, os.path.join(d, "model.glb"))
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"])
     for attempt in range(5):  # a render now and then comes out blank (page shown before the module finished): try again
-        pg = b.new_page(viewport={"width": 1000 if single else 1800, "height": 1000 if single else 600})
+        pg = b.new_page(viewport={"width": SIZE if single else 1800, "height": SIZE if single else 600})
         pg.goto(f"http://127.0.0.1:{port}/_render.html")
         pg.wait_for_function("window.DONE===true", timeout=120000)
         pg.screenshot(path=out, omit_background=alpha)
         pg.close()
-        if os.path.getsize(out) > (8000 if alpha else 20000):
+        if os.path.getsize(out) > max(8000 if alpha else 20000, (SIZE * SIZE // 60) if single else 0):  # a blank page is a few KB at any size
             break
     b.close()
 os.remove(os.path.join(d, "_render.html")); os.remove(os.path.join(d, "model.glb"))

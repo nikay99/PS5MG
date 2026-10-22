@@ -66,6 +66,16 @@ t "atlas 999 is refused"                     400 "$(code -F from_ps5sd=sd_202610
 t "a path as picture name is refused"        400 "$(code -F from_ps5sd=../x.png $U/api/jobs)"
 t "a missing picture is 404"                 404 "$(code -F from_ps5sd=nothing.png $U/api/jobs)"
 t "no picture at all is 400"                 400 "$(code -F steps=8 $U/api/jobs)"
+# parameters without multipart: url-encoded (curl -d) and in the query string
+R3=$(curl -s -d from_ps5sd=sd_20261022_100000_1.png -d steps=11 -d seed=5 -d faces=250000 -d atlas=1024 $U/api/jobs); ID3=$(echo "$R3" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
+t "url-encoded job is accepted"              1   "$([ -n "$ID3" ] && echo 1 || echo 0)"
+t "url-encoded steps reach the job line"     1   "$(grep -c -- '--steps 11' /data/PS5MG/jobs/$ID3.job)"
+t "url-encoded seed reaches the job line"    1   "$(grep -c -- '-s 5 ' /data/PS5MG/jobs/$ID3.job)"
+t "url-encoded faces and atlas arrive"       1   "$(grep -c -- '--faces 250000 --atlas 1024' /data/PS5MG/jobs/$ID3.job)"
+R4=$(curl -s -X POST "$U/api/jobs?from_ps5sd=sd_20261022_100000_1.png&steps=3"); ID4=$(echo "$R4" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
+t "query-string parameters work too"         1   "$(grep -c -- '--steps 3' /data/PS5MG/jobs/$ID4.job)"
+ID5=$(curl -s -d from_ps5sd=sd_20261022_100000_1.png -d steps=999 $U/api/jobs | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
+t "out-of-range steps are clamped to 50"     1   "$(grep -c -- '--steps 50' /data/PS5MG/jobs/$ID5.job)"
 printf 'secret123\n' > /data/PS5MG/api-key.txt
 t "with a key: the PS5SD list needs it"      401 "$(code $U/api/ps5sd/pictures)"
 t "with a key: a PS5SD picture needs it"     401 "$(code $U/api/ps5sd/picture/sd_20261022_100000_1.png)"

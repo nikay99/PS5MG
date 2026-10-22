@@ -103,7 +103,10 @@ std::string status_of(const std::string & id) {
 }
 
 std::string field(const httplib::Request & req, const char * name, const std::string & def) {
-    return req.has_file(name) ? req.get_file_value(name).content : def;
+    // multipart (curl -F, the page) or url-encoded (curl -d) or in the query string: all three work
+    if (req.has_file(name)) return req.get_file_value(name).content;
+    if (req.has_param(name)) return req.get_param_value(name);
+    return def;
 }
 
 // Weight folders: each folder of /data/PS5MG/models with the TRELLIS.2 set; pixal3d when its flows are there too.

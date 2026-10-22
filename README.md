@@ -87,6 +87,21 @@ before you print. The textures are not needed for printing.
 
 ![3D print figurines: input picture and three views of the clay mesh](docs/images/gallery-3d-print.jpg)
 
+### Quality presets
+
+The page has three presets. This is one picture (the gargoyle) made with each, same seed, on the console:
+
+![the same mesh made with the Fast, Balanced and Detailed presets, whole and close-up](docs/images/presets.jpg)
+
+| preset | steps | faces | texture | time |
+|---|---|---|---|---|
+| Fast | 6 | 144k | 1024 px | 1:52 |
+| Balanced | 8 | 139k | 1024 px | 2:13 |
+| Detailed | 12 (face budget 300k, atlas 2048) | 296k | 2048 px | 2:56 |
+
+In the close-up, Fast shows blocky patches in the texture around the nose and mouth; Detailed has a crisper texture and cleaner
+edges. More steps change the shape a little as well, they do not only sharpen it. A Detailed GLB is bigger (18 MB here, 7 MB for the others).
+
 ## How fast
 
 Textured mesh, TRELLIS.2 q4, resolution 512, 8 steps, 150k faces, 1024 px texture, measured on a console:

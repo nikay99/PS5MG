@@ -34,6 +34,16 @@ Seed 5: chest 4:17 (unexplained), blaster 1:26, potion 2:22.
 The face budget and the atlas size hardly change the time: it goes into the flows, not into simplification.
 Pixal3D at 512 writes a raw, geometry-only mesh in 1:25 to 2:00 (raw winding: draw both sides to look at it).
 
+## The three presets (gargoyle, seed 1234)
+
+| preset | steps | face budget | atlas | time | faces | texture | GLB |
+|---|---|---|---|---|---|---|---|
+| Fast | 6 | default | default | 1:52 | 143,592 | 1024 px | 7.3 MB |
+| Balanced | 8 | default | default | 2:13 | 139,370 | 1024 px | 7.2 MB |
+| Detailed | 12 | 300,000 | 2048 | 2:56 | 295,504 | 2048 px | 18.4 MB |
+
+The picture with the three results side by side is `docs/images/presets.jpg` (`tools/make-presets-compare.py`).
+
 ## Where the time goes (lantern)
 
 The first run on the console, with trellis.cpp unchanged, took 19:51 and had no texture; freeing the picture's

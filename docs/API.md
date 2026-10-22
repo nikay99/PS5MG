@@ -15,6 +15,38 @@
 | `GET /api/ps5sd/picture/<name>` | one of those pictures |
 | `POST /api/quit` | the title ends itself after the current job |
 
+## Parameters of `POST /api/jobs`
+
+Send them as form fields: multipart (`curl -F`), url-encoded (`curl -d`) or in the query string all work. Unknown fields are ignored.
+A number outside its range is clamped; a choice that does not exist is answered with `400` and `{"error": "..."}`.
+
+| Field | Values | Default | What it does |
+|---|---|---|---|
+| `image` or `from_ps5sd` | a picture (png/jpg) upload, or a file name from PS5SD's pictures | none (one of the two is required) | the picture to turn into a mesh |
+| `family` | `trellis`, `pixal3d` | `trellis` | the model; Pixal3D needs its weights |
+| `weights` | a folder under `/data/PS5MG/models` (for example `q4`, `q8`) | `q4` | which weight set |
+| `res` | `512`, `1024` | `512` | resolution of the shape; 1024 needs the 1024 weights |
+| `texture` | `on`, `off` | `on` | `off` gives plain geometry |
+| `seed` | 0 to 2147483647 | `42` | a different seed gives a different variant of the same picture |
+| `steps` | 1 to 50 | `8` | more steps: finer, slower (6 is fast, 12 is detailed) |
+| `faces` | `0`, or 1000 to 2000000 | `0` (about 150k) | face budget of the final mesh |
+| `atlas` | `512`, `1024`, `2048` | by resolution | size of the texture |
+| `uv` | `box`, `xatlas` | `box` | UV unwrapping: box is fast, xatlas is cleaner |
+| `fov` | degrees | the model's own | Pixal3D only: the picture's field of view |
+| `label` | text, up to 80 characters | the job id | the name shown in the list |
+
+The quality presets of the page are only values of these fields: Fast is `steps=6`, Balanced is `steps=8`, Detailed is `steps=12`,
+`faces=300000`, `atlas=2048`.
+
+Example: a detailed mesh from a picture, a different seed, no texture.
+
+```sh
+curl -F image=@picture.png -F steps=12 -F faces=300000 -F atlas=2048 -F seed=7 -F texture=off http://<console>:7870/api/jobs
+# {"id":"w20261022-141752-0"}
+curl http://<console>:7870/api/jobs            # the queue; the id above shows status, seconds and size
+curl -o mesh.glb http://<console>:7870/api/jobs/w20261022-141752-0/glb
+```
+
 ## Access
 
 Open by default. To protect the web interface and the API with a key, put one line in `/data/PS5MG/api-key.txt` on the console
