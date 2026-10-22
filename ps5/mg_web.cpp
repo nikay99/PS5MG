@@ -8,6 +8,7 @@
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <fstream>
 #include <set>
@@ -76,6 +77,19 @@ bool safe_id(const std::string & id) {
         if (!isalnum(static_cast<unsigned char>(c)) && c != '_' && c != '-') return false;
     }
     return true;
+}
+
+// PS5SD's pictures, on the same console: a picture can be taken from there instead of being uploaded.
+constexpr const char * kPs5sdOutputs = "/data/PS5SD/outputs";
+
+// A file name in PS5SD's outputs: letters, digits and . _ - only, no path, a picture extension.
+bool safe_picture_name(const std::string & n) {
+    if (n.empty() || n.size() > 96 || n[0] == '.' || n.find("..") != std::string::npos) return false;
+    for (char c : n) {
+        if (!isalnum(static_cast<unsigned char>(c)) && c != '_' && c != '-' && c != '.') return false;
+    }
+    auto ext = [&](const char * e) { return n.size() > strlen(e) && n.compare(n.size() - strlen(e), strlen(e), e) == 0; };
+    return ext(".png") || ext(".jpg") || ext(".jpeg");
 }
 
 std::string status_of(const std::string & id) {
@@ -294,6 +308,28 @@ void mg_web_run(int port) {
     svr.Get(R"(/api/jobs/([A-Za-z0-9_-]+)/log)", [](const httplib::Request & req, httplib::Response & res) {
         res.set_content(log_json(req.matches[1].str()), "application/json");
     });
+    // PS5SD's pictures, newest first (its file names start with the date).
+    svr.Get("/api/ps5sd/pictures", [](const httplib::Request &, httplib::Response & res) {
+        std::vector<std::string> names;
+        for (const auto & f : list_dir(kPs5sdOutputs)) {
+            if (safe_picture_name(f)) names.push_back(f);
+        }
+        std::string o = "[";
+        int         n = 0;
+        for (auto it = names.rbegin(); it != names.rend() && n < 60; ++it, ++n) {
+            o += (n ? ",{\"name\":\"" : "{\"name\":\"") + esc(*it) + "\",\"bytes\":" + std::to_string(fsize(std::string(kPs5sdOutputs) + "/" + *it)) + "}";
+        }
+        res.set_content(o + "]", "application/json");
+    });
+    svr.Get(R"(/api/ps5sd/picture/([A-Za-z0-9._-]+))", [](const httplib::Request & req, httplib::Response & res) {
+        const std::string name = req.matches[1].str();
+        if (!safe_picture_name(name)) {
+            res.status = 400;
+            res.set_content("{\"error\":\"bad picture name\"}", "application/json");
+            return;
+        }
+        send_file(res, std::string(kPs5sdOutputs) + "/" + name, ends_with(name, ".png") ? "image/png" : "image/jpeg");
+    });
     svr.Get("/", [](const httplib::Request &, httplib::Response & res) {
         res.set_content(reinterpret_cast<const char *>(mg_index_html), mg_index_html_len, "text/html; charset=utf-8");
     });
@@ -328,7 +364,19 @@ void mg_web_run(int port) {
             res.status = code;
             res.set_content("{\"error\":\"" + esc(msg) + "\"}", "application/json");
         };
-        if (!req.has_file("image") || req.get_file_value("image").content.empty()) return fail(400, "no image");
+        // The picture: uploaded, or taken from PS5SD's outputs by file name (checked, no path).
+        std::string picture;
+        if (req.has_file("image") && !req.get_file_value("image").content.empty()) {
+            picture = req.get_file_value("image").content;
+        } else {
+            const std::string from = field(req, "from_ps5sd", "");
+            if (from.empty()) return fail(400, "no image");
+            if (!safe_picture_name(from)) return fail(400, "bad picture name");
+            const std::string path = std::string(kPs5sdOutputs) + "/" + from;
+            if (fsize(path) <= 0) return fail(404, "no such picture in PS5SD's outputs");
+            if (fsize(path) > (32L << 20)) return fail(400, "that picture is too big");
+            picture = slurp(path);
+        }
         const std::string weights = field(req, "weights", "q4");
         const std::string family  = field(req, "family", "trellis");
         if (!safe_id(weights)) return fail(400, "bad weights folder");
@@ -341,6 +389,8 @@ void mg_web_run(int port) {
         const bool        texture = field(req, "texture", "on") != "off";
         const bool        xatlas  = field(req, "uv", "box") == "xatlas";
         const int         faces   = clamp_int(field(req, "faces", ""), 0, 2000000, 0);
+        const int         atlas   = clamp_int(field(req, "atlas", ""), 0, 4096, 0);  // 0: the default of the resolution
+        if (atlas != 0 && atlas != 512 && atlas != 1024 && atlas != 2048) return fail(400, "atlas is 512, 1024 or 2048");
         const std::string fov     = field(req, "fov", "");
         if (family == "pixal3d" && !exists(wdir + "/pixal3d_ss_flow.gguf")) return fail(400, "no Pixal3D weights in " + weights);
         if (res_px == 1024 && !exists(wdir + "/shape_flow_1024.gguf")) return fail(400, "no 1024 weights in " + weights);
@@ -353,8 +403,7 @@ void mg_web_run(int port) {
         const std::string img = std::string(kMgIn) + "/" + id + ".png";
         {
             std::ofstream f(img, std::ios::binary);
-            const auto &  c = req.get_file_value("image").content;
-            f.write(c.data(), static_cast<std::streamsize>(c.size()));
+            f.write(picture.data(), static_cast<std::streamsize>(picture.size()));
             if (!f) return fail(500, "cannot store the image");
         }
         std::ostringstream a;
@@ -363,12 +412,13 @@ void mg_web_run(int port) {
         if (family == "pixal3d") a << " --model pixal3d";
         if (family == "pixal3d" && !fov.empty()) a << " --fov " << atof(fov.c_str());
         if (faces >= 1000) a << " --faces " << faces;
+        if (atlas > 0) a << " --atlas " << atlas;
         const std::string label = field(req, "label", "");
         const std::string meta  = "{\"label\":\"" + esc(label.substr(0, 80)) + "\",\"weights\":\"" + esc(weights) +
                                  "\",\"family\":\"" + family + "\",\"res\":" + std::to_string(res_px) + ",\"seed\":" +
                                  std::to_string(seed) + ",\"steps\":" + std::to_string(steps) + ",\"texture\":" +
                                  (texture ? "true" : "false") + ",\"uv\":\"" + (xatlas ? "xatlas" : "box") +
-                                 "\",\"faces\":" + std::to_string(faces) + "}";
+                                 "\",\"faces\":" + std::to_string(faces) + ",\"atlas\":" + std::to_string(atlas) + "}";
         std::ofstream(std::string(kMgJobs) + "/" + id + ".meta") << meta;
         // The job file last, by rename: the worker takes it the moment it is complete.
         std::ofstream(std::string(kMgJobs) + "/" + id + ".job.tmp") << a.str() << '\n';

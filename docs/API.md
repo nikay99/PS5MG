@@ -6,10 +6,13 @@
 | `GET /api/status` | `busy`, `job`, `stage`, `progress`, `elapsed`, pool memory, thread count, log tail |
 | `GET /api/models` | families (`trellis`, `pixal3d`) and the weight sets found under `/data/PS5MG/models` |
 | `GET /api/jobs` | all jobs with status, settings, seconds, GLB size |
-| `POST /api/jobs` | multipart: `image` (png/jpg), `family`, `weights` (`q4`/`q8`), `res` (512/1024), `texture`, `seed`, `steps`, `faces`, `uv`, `fov`, `label` |
+| `POST /api/jobs` | multipart: `image` (png/jpg) **or** `from_ps5sd` (a file name from PS5SD's pictures), `family`, `weights` (`q4`/`q8`), `res` (512/1024), `texture`, `seed`, `steps`, `faces`, `atlas` (512/1024/2048, default per resolution), `uv`, `fov`, `label` |
 | `GET /api/jobs/<id>/glb` | the mesh (binary glTF) |
 | `GET /api/jobs/<id>/image` | the input picture |
 | `POST /api/jobs/<id>/cancel` | cancel a queued job |
+| `GET /api/jobs/<id>/log` | the last lines of the job's log: `{"lines":[...]}` |
+| `GET /api/ps5sd/pictures` | the pictures in PS5SD's `/data/PS5SD/outputs` (png and jpg, newest first, at most 60): `[{"name","bytes"}]` |
+| `GET /api/ps5sd/picture/<name>` | one of those pictures |
 | `POST /api/quit` | the title ends itself after the current job |
 
 ## Access
@@ -29,3 +32,9 @@ is needed.
 `GET /api/jobs/<id>/log` returns the last lines of a job's log (`{"lines":[...]}`), which the page shows for a failed job ("Why?").
 Jobs are plain files in `/data/PS5MG/jobs/<id>.job` (one line of trellis-cli arguments); `tools/mg.sh` and
 `tools/run-queue.sh` drive that queue over FTP.
+
+## Pictures from PS5SD
+
+PS5SD and PS5MG run on the same console, one at a time. `GET /api/ps5sd/pictures` lists what PS5SD has drawn, and a job can take one
+of them with `from_ps5sd=<file name>` instead of an upload. The name is checked: letters, digits and `. _ -` only, no path, no `..`,
+and a `.png`, `.jpg` or `.jpeg` extension. A name that does not pass is `400`, a missing file is `404`.

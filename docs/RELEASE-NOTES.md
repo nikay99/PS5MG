@@ -1,11 +1,11 @@
-## PS5MG 0.1.1
+## PS5MG 0.2.0
 
 ### New
-- Optional key for the web interface and the API: put one line in /data/PS5MG/api-key.txt, or run tools/mg.sh setkey from the repository. Without a key everything stays open, as in 0.1.0.
-- A failed job shows the last lines of its log in the page ("Why?").
-
-### Safer
-- Pages of other websites can no longer drive the console from a browser on your network: the server sends no wildcard CORS header any more, and a POST has to come from the console's own page.
+- STL and OBJ downloads in the viewer, made for printing: the mesh stands on the plate and is scaled to the size you give (longest side, in millimetres).
+- Quality presets: Fast, Balanced and Detailed. A dice button picks a random seed. The detailed preset also sets a bigger texture and a higher face budget.
+- A new option for the texture size (512, 1024 or 2048) under More options.
+- Drop several pictures at once: each one becomes a job, named after its file.
+- "Use a picture from PS5SD": pick one of the pictures PS5SD made on the same console, without copying files.
 
 ### Unchanged
 - Model weights are not included. The title has no network client and downloads nothing.

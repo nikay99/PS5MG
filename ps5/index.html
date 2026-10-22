@@ -158,6 +158,22 @@ dialog.in::backdrop{opacity:1}
 #view{width:100%;height:min(68vh,40rem);display:block;background:radial-gradient(120% 90% at 50% 40%,var(--grouped2),var(--stage));touch-action:none}
 .vf{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 1rem calc(.8rem + env(safe-area-inset-bottom));color:var(--label2);font-size:.8125rem;align-items:center}
 
+/* Pictures: several at once, and the link to PS5SD's */
+.thumbs{display:grid;gap:.4rem;width:100%;max-width:20rem;margin:0 auto}
+.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block;animation:rise var(--t) var(--spring)}
+.thumbs.n1{max-width:15rem}.thumbs.n2,.thumbs.n3,.thumbs.n4{grid-template-columns:1fr 1fr}.thumbs.n1 img{aspect-ratio:auto;object-fit:contain;max-height:16rem}
+.more-n{position:absolute;right:1.1rem;bottom:.9rem;background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-radius:99px;padding:.15rem .6rem;font-size:.8125rem;font-weight:600}
+.linkbtn{display:block;margin:.55rem auto 0;background:none;border:0;color:var(--tint);font:500 .9375rem var(--font);cursor:pointer;padding:.3rem .6rem;border-radius:8px}
+.linkbtn:active{opacity:.55}
+.dice{flex:none;width:2rem;height:2rem;border:0;border-radius:50%;background:var(--fill2);color:var(--tint);display:grid;place-items:center;cursor:pointer;transition:transform .4s var(--spring-bounce)}
+.dice:active{transform:rotate(90deg) scale(.9)}.dice svg{width:1.1rem;height:1.1rem}
+.seg[data-n="3"]{min-width:15rem}.seg[data-n="3"] .thumb{width:calc(33.333% - 1.4px)}
+.seg[data-i="2"] .thumb{transform:translateX(200%)}.seg[data-i="x"] .thumb{opacity:0}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(7rem,1fr));gap:.6rem;padding:.9rem 1rem;max-height:min(58vh,32rem);overflow:auto}
+.pgrid button{padding:0;border:0;background:var(--fill2);border-radius:12px;overflow:hidden;aspect-ratio:1;cursor:pointer;transition:transform .35s var(--spring)}
+.pgrid button:active{transform:scale(.96);transition-duration:.08s}.pgrid img{width:100%;height:100%;object-fit:cover;display:block}
+.exp{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.exp input{width:3.6rem;background:var(--fill2);border:0;border-radius:8px;color:var(--label);font:inherit;text-align:right;padding:.25rem .4rem}
 /* Lock and failure details */
 .lock{grid-column:1/-1;max-width:26rem;margin:2rem auto;text-align:center;padding:1.6rem 1.4rem}
 .lock h2{font:700 1.5rem/1.15 var(--display);letter-spacing:-.025em;margin-bottom:.35rem}
@@ -198,20 +214,27 @@ dialog.in::backdrop{opacity:1}
       <b>Drop a picture</b>one object, plain background works best
     </div>
   </div>
-  <input id="file" type="file" accept="image/*" hidden>
+  <input id="file" type="file" accept="image/*" multiple hidden>
+  <button class="linkbtn" id="pickbtn" type="button">Use a picture from PS5SD</button>
 
   <div class="group" style="margin-top:1.1rem">
     <div class="rowi"><span>Model</span>
       <div class="seg" id="familyseg" data-i="0" role="radiogroup" aria-label="Model"><i class="thumb"></i>
         <button type="button" role="radio" aria-checked="true" data-v="trellis">TRELLIS.2</button>
         <button type="button" role="radio" aria-checked="false" data-v="pixal3d">Pixal3D</button></div></div>
+    <div class="rowi"><span>Quality</span>
+      <div class="seg" id="qseg" data-n="3" data-i="1" role="radiogroup" aria-label="Quality"><i class="thumb"></i>
+        <button type="button" role="radio" aria-checked="false" data-q="fast">Fast</button>
+        <button type="button" role="radio" aria-checked="true" data-q="balanced">Balanced</button>
+        <button type="button" role="radio" aria-checked="false" data-q="detailed">Detailed</button></div></div>
     <div class="rowi"><span>Texture</span><input class="switch" type="checkbox" id="texture" checked aria-label="Texture"></div>
     <details class="adv" id="adv"><summary><span>More options</span></summary>
       <div class="adv-body"><div>
         <div class="rowi"><span>Weights</span><select id="weights"></select></div>
         <div class="rowi"><span>Resolution</span><select id="res"><option>512</option><option>1024</option></select></div>
         <div class="rowi"><span>Steps</span><input id="steps" type="number" value="8" min="1" max="50" inputmode="numeric"></div>
-        <div class="rowi"><span>Seed</span><input id="seed" type="number" value="42" min="0" inputmode="numeric"></div>
+        <div class="rowi"><span>Seed</span><input id="seed" type="number" value="42" min="0" inputmode="numeric"><button class="dice" id="dice" type="button" aria-label="Random seed" title="Random seed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/><circle cx="8.5" cy="15.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="15.5" r=".9" fill="currentColor"/></svg></button></div>
+        <div class="rowi"><span>Texture size</span><select id="atlas"><option value="0">Default</option><option value="512">512</option><option value="1024">1024</option><option value="2048">2048</option></select></div>
         <div class="rowi"><span>Face budget</span><input id="faces" type="number" value="0" min="0" step="1000" inputmode="numeric" placeholder="default"></div>
         <div class="rowi"><span>UV unwrap</span><select id="uv"><option value="box">Box (fast)</option><option value="xatlas">xatlas (clean)</option></select></div>
         <div class="rowi"><span>Name</span><input id="label" type="text" maxlength="60" placeholder="optional"></div>
@@ -244,7 +267,14 @@ dialog.in::backdrop{opacity:1}
     <a id="dl" download><button class="btn sec sm" type="button">Download GLB</button></a>
     <button class="btn sec sm" id="close" type="button">Done</button></div>
   <canvas id="view"></canvas>
-  <div class="vf"><span>Drag to turn, scroll or pinch to zoom.</span><span id="vinfo"></span></div>
+  <div class="vf"><span class="exp">For printing: longest side <input id="mm" type="number" value="60" min="5" max="500" inputmode="numeric" aria-label="Longest side in millimetres"> mm
+      <button class="btn sec sm" id="stl" type="button" disabled>STL</button><button class="btn sec sm" id="objb" type="button" disabled>OBJ</button></span><span id="vinfo"></span></div>
+</dialog>
+
+<dialog id="pick" aria-labelledby="pt">
+  <div class="vh" id="ph"><b id="pt">Pictures from PS5SD</b><button class="btn sec sm" id="pclose" type="button">Done</button></div>
+  <div class="pgrid" id="pgrid"></div>
+  <div class="vf"><span id="pmsg"></span></div>
 </dialog>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -252,9 +282,11 @@ dialog.in::backdrop{opacity:1}
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {STLExporter} from 'three/addons/exporters/STLExporter.js';
+import {OBJExporter} from 'three/addons/exporters/OBJExporter.js';
 const $=id=>document.getElementById(id);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)');
-let file=null, models=[], family='trellis', noWeights=false;
+let models=[], family='trellis', noWeights=false;
 const STAGES=7;
 let locked=false, timer=null;
 // Every call goes through here: a console with a key answers 401, and the page asks for the key instead of failing.
@@ -266,19 +298,44 @@ $('lockform').onsubmit=async e=>{ e.preventDefault(); const fd=new FormData(); f
 
 // ---- the form
 const drop=$('drop'), fin=$('file'), DROP0=$('droptxt').outerHTML;
-function setFile(f){
-  if(!f||!f.type.startsWith('image/')){ say('That is not a picture.',true); return; }
-  file=f; $('go').disabled=noWeights; if(!noWeights) say(f.name);
-  const r=new FileReader(); r.onload=()=>{drop.classList.add('has'); drop.innerHTML='<img alt="Your picture" src="'+r.result+'">'}; r.readAsDataURL(f);
-}
+let picks=[];   // what to make: {file} from this device, or {ps5sd:"name.png"} from PS5SD's outputs
 function say(t,bad){ const m=$('msg'); m.textContent=t; m.classList.toggle('bad',!!bad); }
+function showPicks(){
+  drop.classList.toggle('has',picks.length>0);
+  if(!picks.length){ drop.innerHTML=DROP0; $('go').disabled=true; $('go').textContent='Make mesh'; return; }
+  const src=p=>p.file?URL.createObjectURL(p.file):'/api/ps5sd/picture/'+encodeURIComponent(p.ps5sd);
+  const shown=picks.slice(0,4);
+  drop.innerHTML=`<div class="thumbs n${shown.length}">${shown.map(p=>`<img alt="" src="${src(p)}">`).join('')}</div>${picks.length>4?`<span class="more-n">+${picks.length-4} more</span>`:''}`;
+  $('go').disabled=noWeights; $('go').textContent=picks.length>1?`Make ${picks.length} meshes`:'Make mesh';
+  if(!noWeights) say(picks.length>1?`${picks.length} pictures ready.`:(picks[0].file?picks[0].file.name:picks[0].ps5sd));
+}
+function setFiles(list){
+  const imgs=[...list].filter(f=>f.type.startsWith('image/'));
+  if(!imgs.length){ say('That is not a picture.',true); return; }
+  picks=imgs.slice(0,12).map(file=>({file}));   // a dozen at a time: the queue is long enough
+  showPicks();
+}
 drop.onclick=()=>fin.click();
 drop.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fin.click(); } };
-fin.onchange=()=>setFile(fin.files[0]);
+fin.onchange=()=>{ setFiles(fin.files); fin.value=''; };
 drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};
 drop.ondragleave=()=>drop.classList.remove('over');
-drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');setFile(e.dataTransfer.files[0])};
-addEventListener('paste',e=>{const f=[...(e.clipboardData?.files||[])][0]; if(f) setFile(f)});
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');setFiles(e.dataTransfer.files)};
+addEventListener('paste',e=>{const fl=[...(e.clipboardData?.files||[])]; if(fl.length) setFiles(fl)});
+
+// quality presets (steps, face budget, texture size) and the dice
+const PRESETS={fast:{steps:6,faces:0,atlas:0},balanced:{steps:8,faces:0,atlas:0},detailed:{steps:12,faces:300000,atlas:2048}};
+const qseg=$('qseg');
+function setQuality(q){
+  const p=PRESETS[q]; $('steps').value=p.steps; $('faces').value=p.faces; $('atlas').value=p.atlas;
+  qseg.dataset.i=({fast:0,balanced:1,detailed:2})[q];
+  qseg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',b.dataset.q===q));
+}
+qseg.onclick=e=>{ const b=e.target.closest('button'); if(b) setQuality(b.dataset.q); };
+for(const k of ['steps','faces','atlas']) $(k).addEventListener('change',()=>{   // typed by hand: show it is none of the presets
+  const hit=Object.keys(PRESETS).find(q=>+$('steps').value===PRESETS[q].steps&&+$('faces').value===PRESETS[q].faces&&+$('atlas').value===PRESETS[q].atlas);
+  if(hit) setQuality(hit); else { qseg.dataset.i='x'; qseg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',false)); } });
+$('dice').onclick=()=>{ $('seed').value=Math.floor(Math.random()*1000000); };
 
 const seg=$('familyseg');
 function setFamily(v){ family=v; seg.dataset.i=v==='pixal3d'?1:0; seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',b.dataset.v===v)); }
@@ -296,15 +353,20 @@ function syncModels(){
 }
 $('weights').onchange=syncModels;
 $('go').onclick=async()=>{
-  const fd=new FormData(); fd.append('image',file);
-  fd.append('family',family); fd.append('texture',$('texture').checked?'on':'off');
-  for(const k of ['weights','res','seed','steps','faces','uv']) fd.append(k,$(k).value);
-  fd.append('label',$('label').value.trim()||file.name.replace(/\.[^.]+$/,'').slice(0,60));   // no name given: the picture's file name
+  const many=picks.length>1; let ok=0, last='';
   $('go').disabled=true; say('Sending...');
-  try{ const r=await api('/api/jobs',{method:'POST',body:fd}); const j=await r.json();
-    if(r.ok){ say('In the queue.'); } else say(j.error||'Something went wrong.',true);
-  }catch(e){ if(e.message!=='locked') say('No connection to the console.',true); }
-  $('go').disabled=!file||noWeights; poll();
+  for(const p of picks){
+    const fd=new FormData();
+    if(p.file) fd.append('image',p.file); else fd.append('from_ps5sd',p.ps5sd);
+    fd.append('family',family); fd.append('texture',$('texture').checked?'on':'off');
+    for(const k of ['weights','res','seed','steps','faces','uv','atlas']) fd.append(k,$(k).value);
+    const base=(p.file?p.file.name:p.ps5sd).replace(/\.[^.]+$/,'').slice(0,60);   // no name given: the picture's file name
+    fd.append('label',(!many&&$('label').value.trim())||base);
+    try{ const r=await api('/api/jobs',{method:'POST',body:fd}); const j=await r.json(); if(r.ok) ok++; else last=j.error||'Something went wrong.'; }
+    catch(e){ if(e.message==='locked') return; last='No connection to the console.'; break; }
+  }
+  say(last||(ok>1?`${ok} meshes in the queue.`:'In the queue.'),!!last);
+  $('go').disabled=!picks.length||noWeights; poll();
 };
 
 // ---- status
@@ -354,17 +416,45 @@ $('jobs').onclick=async e=>{
   if(b.dataset.c){ b.disabled=true; await api(`/api/jobs/${b.dataset.c}/cancel`,{method:'POST'}); lastKey=''; poll(); }
 };
 
-// ---- the viewer sheet
-const dlg=$('dlg'), vh=$('vh');
-let renderer,scene,camera,controls,obj,raf,origin='50% 100%';
+// ---- sheets: the viewer and the picture picker grow out of the button that opened them and go back where they came from
+const dlg=$('dlg'), pick=$('pick'), vh=$('vh');
+let renderer,scene,camera,controls,obj,raf;
 const project=(v,d=.998)=>(v/1000)*d/(1-d);                 // where a flick would come to rest (px)
 const rubber=(o,dim,c=.55)=>(o*dim*c)/(dim+c*Math.abs(o));   // resistance that grows with the overshoot
+function openSheet(d,from){
+  d.showModal();
+  let o='50% 100%';
+  if(from&&innerWidth>700){ const r=d.getBoundingClientRect(), b=from.getBoundingClientRect(); o=`${b.left+b.width/2-r.left}px ${b.top+b.height/2-r.top}px`; }
+  d.style.transformOrigin=o;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>d.classList.add('in')));
+}
+function closeSheet(d,vy=0){
+  d.classList.remove('in');
+  if(vy>0){ d.style.transition='transform .4s var(--spring),opacity .3s'; d.style.transform=`translateY(${innerHeight}px)`; }   // down the way it was dragged
+  setTimeout(()=>{ if(d.open) d.close(); }, reduce.matches?220:vy>0?330:380);
+}
+for(const d of [dlg,pick]){
+  d.addEventListener('close',()=>{ if(d===dlg) cancelAnimationFrame(raf); d.classList.remove('in'); d.style.transform=''; d.style.transition=''; });
+  d.addEventListener('cancel',e=>{ e.preventDefault(); closeSheet(d); });
+  d.addEventListener('click',e=>{ if(e.target===d) closeSheet(d); });            // the dimmed area
+}
+// drag a sheet by its header: it follows the finger 1:1, and lets go with the finger's own velocity
+function dragSheet(d,handle){
+  let drag=false,y0=0,hist=[];
+  handle.addEventListener('pointerdown',e=>{ if(e.target.closest('button,a,label,input')) return; drag=true; handle.setPointerCapture(e.pointerId); y0=e.clientY; hist=[[e.timeStamp,e.clientY]]; d.style.transition='none'; handle.style.cursor='grabbing'; });
+  handle.addEventListener('pointermove',e=>{ if(!drag) return; let dy=e.clientY-y0; if(dy<0) dy=-rubber(-dy,200);
+    d.style.transform=`translateY(${dy}px)`; hist.push([e.timeStamp,e.clientY]); hist=hist.filter(h=>e.timeStamp-h[0]<100); });
+  const end=e=>{ if(!drag) return; drag=false; handle.style.cursor=''; d.style.transition='';
+    const a=hist[0], b=hist[hist.length-1], v=b[0]>a[0]?(b[1]-a[1])/(b[0]-a[0])*1000:0, dy=e.clientY-y0;
+    if(dy+project(v)>d.offsetHeight*.45){ closeSheet(d,Math.max(v,1)); } else { d.style.transform=''; } };
+  handle.addEventListener('pointerup',end); handle.addEventListener('pointercancel',end);
+}
+dragSheet(dlg,vh); dragSheet(pick,$('ph'));
+
+// ---- the viewer
 function openViewer(id,title,from){
-  $('vt').textContent=title; $('dl').href=`/api/jobs/${id}/glb`; $('vinfo').textContent='';
-  dlg.showModal();
-  if(from&&innerWidth>700){ const r=dlg.getBoundingClientRect(), b=from.getBoundingClientRect(); origin=`${b.left+b.width/2-r.left}px ${b.top+b.height/2-r.top}px`; } else origin='50% 100%';
-  dlg.style.transformOrigin=origin;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>dlg.classList.add('in')));
+  $('vt').textContent=title; $('dl').href=`/api/jobs/${id}/glb`; $('vinfo').textContent=''; $('stl').disabled=true; $('objb').disabled=true;
+  openSheet(dlg,from);
   if(!renderer){
     renderer=new THREE.WebGLRenderer({canvas:$('view'),antialias:true,alpha:true}); renderer.setClearColor(0,0); scene=new THREE.Scene();
     camera=new THREE.PerspectiveCamera(40,1,0.01,100); controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true;
@@ -378,34 +468,38 @@ function openViewer(id,title,from){
     obj.position.sub(c); scene.add(obj); camera.position.set(s*.7,s*.4,s*.9); controls.target.set(0,0,0); controls.update();
     let tris=0; obj.traverse(o=>{ if(o.geometry) tris+=(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3;
       if(o.material&&!o.material.map&&!o.geometry.attributes.color) o.material.color=new THREE.Color(0xb9c2d3); if(o.material) o.material.wireframe=$('wire').checked; });
-    $('vinfo').textContent=Math.round(tris/1000)+'k faces';
+    $('vinfo').textContent=Math.round(tris/1000)+'k faces'; $('stl').disabled=false; $('objb').disabled=false;
     cancelAnimationFrame(raf); const loop=()=>{raf=requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}; loop();
   },undefined,()=>{ $('vinfo').textContent='Could not load this mesh.'; });
 }
-function closeViewer(vy=0){
-  // back the way it came: to its button, or down the way it was dragged
-  dlg.classList.remove('in');
-  if(vy>0){ dlg.style.transition='transform .4s var(--spring),opacity .3s'; dlg.style.transform=`translateY(${innerHeight}px)`; }
-  const done=()=>{ if(dlg.open) dlg.close(); };
-  setTimeout(done, reduce.matches?220:vy>0?330:380);
-}
-dlg.addEventListener('close',()=>{ cancelAnimationFrame(raf); dlg.classList.remove('in'); dlg.style.transform=''; dlg.style.transition=''; });
-dlg.addEventListener('cancel',e=>{ e.preventDefault(); closeViewer(); });
-dlg.addEventListener('click',e=>{ if(e.target===dlg) closeViewer(); });            // the dimmed area
-$('close').onclick=()=>closeViewer();
+$('close').onclick=()=>closeSheet(dlg);
 $('wire').onchange=()=>obj&&obj.traverse(o=>{if(o.material)o.material.wireframe=$('wire').checked});
 
-// drag the sheet by its header: it follows the finger 1:1, and lets go with the finger's own velocity
-{
-  let drag=false,y0=0,hist=[];
-  vh.addEventListener('pointerdown',e=>{ if(e.target.closest('button,a,label,input')) return; drag=true; vh.setPointerCapture(e.pointerId); y0=e.clientY; hist=[[e.timeStamp,e.clientY]]; dlg.style.transition='none'; vh.style.cursor='grabbing'; });
-  vh.addEventListener('pointermove',e=>{ if(!drag) return; let dy=e.clientY-y0; if(dy<0) dy=-rubber(-dy,200);
-    dlg.style.transform=`translateY(${dy}px)`; hist.push([e.timeStamp,e.clientY]); hist=hist.filter(h=>e.timeStamp-h[0]<100); });
-  const end=e=>{ if(!drag) return; drag=false; vh.style.cursor=''; dlg.style.transition='';
-    const a=hist[0], b=hist[hist.length-1], v=b[0]>a[0]?(b[1]-a[1])/(b[0]-a[0])*1000:0, dy=e.clientY-y0;
-    if(dy+project(v)>dlg.offsetHeight*.45){ closeViewer(Math.max(v,1)); } else { dlg.style.transform=''; } };
-  vh.addEventListener('pointerup',end); vh.addEventListener('pointercancel',end);
+// STL and OBJ for printing: made in the browser. glTF is y-up and slicers are z-up, so it is turned onto its back plate and scaled to the size asked for.
+function printable(mm){
+  const g=obj.clone(true); g.position.set(0,0,0); g.rotation.set(-Math.PI/2,0,0); g.updateMatrixWorld(true);
+  const s=new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3());
+  g.scale.multiplyScalar(mm/Math.max(s.x,s.y,s.z,1e-6)); g.updateMatrixWorld(true);
+  const b=new THREE.Box3().setFromObject(g); g.position.set(-(b.min.x+b.max.x)/2,-(b.min.y+b.max.y)/2,-b.min.z); g.updateMatrixWorld(true);
+  return g;
 }
+function save(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
+const fileName=()=>($('vt').textContent||'mesh').replace(/[^A-Za-z0-9._-]+/g,'_').slice(0,60)||'mesh';
+const mmValue=()=>Math.max(5,Math.min(500,+$('mm').value||60));
+$('stl').onclick=()=>{ if(obj) save(new Blob([new STLExporter().parse(printable(mmValue()),{binary:true})],{type:'model/stl'}),fileName()+'.stl'); };
+$('objb').onclick=()=>{ if(obj) save(new Blob([new OBJExporter().parse(printable(mmValue()))],{type:'text/plain'}),fileName()+'.obj'); };
+
+// ---- pictures PS5SD made on this console
+async function openPicker(){
+  openSheet(pick,$('pickbtn')); $('pmsg').textContent='Looking...'; $('pgrid').innerHTML='';
+  try{
+    const l=await (await api('/api/ps5sd/pictures')).json();
+    $('pmsg').textContent=l.length?'Tap a picture.':'No pictures found. PS5SD has to have made some on this console.';
+    $('pgrid').innerHTML=l.map(x=>`<button type="button" data-n="${esc(x.name)}"><img loading="lazy" alt="" src="/api/ps5sd/picture/${encodeURIComponent(x.name)}"></button>`).join('');
+  }catch(e){ if(e.message!=='locked') $('pmsg').textContent='Could not read them.'; }
+}
+$('pgrid').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; picks=[{ps5sd:b.dataset.n}]; showPicks(); closeSheet(pick); };
+$('pickbtn').onclick=openPicker; $('pclose').onclick=()=>closeSheet(pick);
 
 function start(){
   api('/api/models').then(r=>r.json()).then(m=>{models=m;syncModels()}).catch(()=>{});
