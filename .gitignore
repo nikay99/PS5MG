@@ -34,3 +34,4 @@ tools/test-deform/t
 tools/test-decimate/*.o
 tools/test-decimate/t
 tools/test-decimate/fast.bin
+ci-dl/

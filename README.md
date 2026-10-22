@@ -24,7 +24,7 @@ Title id `PPSA99577`.
   [Pixal3D](https://huggingface.co/vegax87/Pixal3D) (a pixel-aligned TRELLIS.2 fine-tune, closer to the picture, geometry only at 512).
 - A job queue on disk, so the console can be driven by files over FTP too (`tools/mg.sh`, `tools/run-queue.sh`).
 
-![lantern](docs/images/mesh-lantern.jpg)
+![a picture and the textured mesh PS5MG made from it on the console](docs/images/hero.jpg)
 
 ## Examples
 
