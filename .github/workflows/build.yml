@@ -99,13 +99,10 @@ jobs:
           docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work "$IMAGE" \
             bash -c 'git config --global --add safe.directory "*" && bash scripts/build-mg.sh'
 
-      # The launch payload for PPSA99577 (PS5SD's script, title id from the environment).
+      # The launch payload for PPSA99577 (scripts/build-launcher.sh: PS5SD's script pins the title id to its own).
       - name: Build the launch payload
         run: |
-          docker run --rm --platform linux/amd64 -e PS5SD_TITLE_ID=PPSA99577 -v "$PWD":/work -w /work/third_party/PS5SD "$IMAGE" \
-            bash -c 'git config --global --add safe.directory "*" && bash scripts/build-launcher.sh'
-          mkdir -p build/tools
-          cp third_party/PS5SD/build/tools/launch.elf build/tools/launch-mg.elf
+          docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work "$IMAGE"             bash -c 'git config --global --add safe.directory "*" && bash scripts/build-launcher.sh'
 
       # The container ran as root; hand the files back before the cache is saved.
       - name: Give the files back to the runner

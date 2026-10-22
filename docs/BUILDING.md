@@ -24,7 +24,7 @@ git -C third_party/PS5SD submodule update --init third_party/ps5-homebrew-ui thi
 docker build --platform linux/amd64 -t ps5sd-build third_party/PS5SD/docker
 docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work/third_party/PS5SD ps5sd-build scripts/setup-deps.sh
 docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work ps5sd-build scripts/build-mg.sh
-docker run --rm --platform linux/amd64 -e PS5SD_TITLE_ID=PPSA99577 -v "$PWD":/work -w /work/third_party/PS5SD ps5sd-build scripts/build-launcher.sh
+docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work ps5sd-build bash scripts/build-launcher.sh
 ```
 
 The title folder ends up in `build/title/PPSA99577`. `MG_DISPLAY=0` builds without the screen.
