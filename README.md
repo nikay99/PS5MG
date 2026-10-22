@@ -9,7 +9,11 @@ PS5MG is the third title in the line of [PS5LM](https://github.com/cobanov/PS5LM
 [PS5SD](https://github.com/Darkatek7/PS5SD) (Stable Diffusion): same toolchain, same screen, same install.
 Title id `PPSA99577`.
 
-![web interface](docs/images/web-ui.jpg)
+| web interface (desktop) | on a phone |
+|---|---|
+| ![web interface on a desktop, with sample data](docs/images/web-ui.jpg) | ![web interface on a phone](docs/images/web-ui-phone.jpg) |
+
+*The interface is a single page the title serves itself; the pictures show it with sample data.*
 
 | on the TV while it works | when it is done |
 |---|---|

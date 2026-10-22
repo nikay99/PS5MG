@@ -20,7 +20,24 @@ if art.width != art.height: art = art.crop((0, 0, min(art.size), min(art.size)))
 edge = np.asarray(art.resize((64, 64)), float)
 bgc = tuple(int(v) for v in np.concatenate([edge[0], edge[-1], edge[:, 0], edge[:, -1]]).mean(0))  # the picture's own background
 
-icon = art.resize((512, 512), Image.LANCZOS).convert("RGBA")
+def named(im, big, small, k=1.0):
+    """The artwork with its name at the bottom: what the app is, readable at a glance."""
+    w = im.width
+    im = im.copy()
+    fade = np.zeros((im.height, w, 4), np.uint8)
+    y = np.linspace(0, 1, im.height)[:, None]
+    fade[:, :, :3] = np.array(bgc, np.uint8)
+    fade[:, :, 3] = (np.clip((y - 0.46) / 0.3, 0, 1) ** 1.4 * 235).astype(np.uint8).repeat(w, 1)
+    im.alpha_composite(Image.fromarray(fade))
+    d = ImageDraw.Draw(im)
+    fb, fs = font(int(w * 0.17 * k)), font(int(w * 0.082 * k))
+    tw = d.textlength(big, font=fb)
+    d.text(((w - tw) / 2, w * 0.655), big, font=fb, fill=(240, 246, 250, 255))
+    sw = d.textlength(small, font=fs)
+    d.text(((w - sw) / 2, w * 0.655 + w * 0.185), small, font=fs, fill=(110, 225, 205, 255))
+    return im
+
+icon = named(art.resize((512, 512), Image.LANCZOS).convert("RGBA"), "PS5MG", "3D GENERATOR")
 icon.convert("RGB").save(os.path.join(out, "icon0.png"))
 
 def wall(text):
