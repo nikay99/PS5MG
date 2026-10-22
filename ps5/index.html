@@ -160,6 +160,19 @@ dialog.in::backdrop{opacity:1}
 #view{width:100%;height:min(68vh,40rem);display:block;background:radial-gradient(120% 90% at 50% 40%,var(--grouped2),var(--stage));touch-action:none}
 .vf{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 1rem calc(.8rem + env(safe-area-inset-bottom));color:var(--label2);font-size:.8125rem;align-items:center}
 
+/* Model files on the console */
+.wcard{margin-top:1.1rem;padding-bottom:.4rem}
+.wcard h3{font:600 1.0625rem var(--display);letter-spacing:-.02em;padding:.9rem 1rem .2rem}
+.wcard p{color:var(--label2);font-size:.875rem;line-height:1.45;padding:0 1rem .6rem}
+.wcard code{font:.8rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--fill2);border-radius:6px;padding:.08rem .35rem;color:var(--label);word-break:break-all}
+.wrow{display:grid;grid-template-columns:.6rem minmax(0,1fr) auto;gap:.6rem;align-items:center;padding:.45rem 1rem;position:relative}
+.wrow+.wrow::before{content:"";position:absolute;top:0;left:1rem;right:0;height:.5px;background:var(--sep)}
+.wrow .wd{width:.6rem;height:.6rem;border-radius:50%;background:var(--label3)}
+.wrow.ok .wd{background:var(--ok)}.wrow.partial .wd{background:var(--warn)}.wrow.missing:not(.opt) .wd{background:var(--bad)}
+.wrow b{font-weight:600;font-size:.9375rem;letter-spacing:-.01em}.wrow small{display:block;color:var(--label2);font-size:.78rem;line-height:1.3}
+.wrow .st{color:var(--label2);font-size:.8125rem;white-space:nowrap}
+.wfoot{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;padding:.5rem 1rem .6rem}
+.wfoot a{color:var(--tint);font-size:.9rem}
 /* The API sheet */
 .hbtn{background:var(--fill2);border:0;color:var(--label2);font:600 .8125rem var(--font);padding:.28rem .75rem;border-radius:99px;cursor:pointer;transition:transform .35s var(--spring),color .2s}
 .hbtn:hover{color:var(--label)}.hbtn:active{transform:scale(.95);transition-duration:.08s}
@@ -244,6 +257,7 @@ dialog.in::backdrop{opacity:1}
     <details class="adv" id="adv"><summary><span>More options</span></summary>
       <div class="adv-body"><div>
         <div class="rowi"><span>Weights</span><select id="weights"></select></div>
+        <div class="rowi"><span>Model files</span><button class="linkbtn" id="wtoggle" type="button" style="margin:0">Check</button></div>
         <div class="rowi"><span>Resolution</span><select id="res"><option>512</option><option>1024</option></select></div>
         <div class="rowi"><span>Steps</span><input id="steps" type="number" value="8" min="1" max="50" inputmode="numeric"></div>
         <div class="rowi"><span>Seed</span><input id="seed" type="number" value="42" min="0" inputmode="numeric"><button class="dice" id="dice" type="button" aria-label="Random seed" title="Random seed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/><circle cx="8.5" cy="15.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="15.5" r=".9" fill="currentColor"/></svg></button></div>
@@ -253,6 +267,12 @@ dialog.in::backdrop{opacity:1}
         <div class="rowi"><span>Name</span><input id="label" type="text" maxlength="60" placeholder="optional"></div>
       </div></div>
     </details>
+  </div>
+  <div class="group wcard" id="wcard" hidden>
+    <h3 id="wtitle">Model files</h3>
+    <p id="wintro"></p>
+    <div id="wlist"></div>
+    <div class="wfoot"><button class="btn sec sm" id="wrecheck" type="button">Check again</button><a href="https://github.com/nikay99/PS5MG#where-the-weights-come-from" target="_blank" rel="noopener">How to get them</a></div>
   </div>
   <button class="btn full" id="go" disabled>Make mesh</button>
   <div class="hint" id="msg" role="status" aria-live="polite">Choose a picture to start.</div>
@@ -551,8 +571,30 @@ $('apibody').onclick=async e=>{ const b=e.target.closest('.copy'); if(!b) return
   catch(_){ const r=document.createRange(); r.selectNodeContents(b.parentElement.querySelector('span')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); }
   b.textContent='Copied'; setTimeout(()=>{ b.textContent='Copy'; },1400); };
 
+// ---- the model files on the console: shown by itself when they are missing, on request otherwise
+let wdata=null, wopen=false;
+function renderWeights(){
+  if(!wdata) return;
+  const miss=wdata.files.filter(f=>!f.optional&&f.state!=='ok').length;
+  const usable=models.length>0;
+  $('wtoggle').textContent=wdata.complete?'Complete':(usable?'Check':`${miss} missing`);
+  $('wtitle').textContent=wdata.complete?'Model files: complete':usable?'Model files: some are missing':'The model files are not on the console yet';
+  $('wintro').innerHTML=wdata.complete
+    ?`All required files are in <code>${esc(wdata.path)}</code>.`
+    :`PS5MG needs the model weights, and they are not part of the app. Get them from their authors and copy them with FTP to <code>${esc(wdata.path)}</code>. Red means missing, orange means only partly copied.`;
+  $('wlist').innerHTML=wdata.files.map(f=>{
+    const mb=Math.round(f.bytes/1048576);
+    const st=f.state==='ok'?'there':f.state==='partial'?`${Math.round(f.have/1048576)} of ${mb} MB`:(f.optional?'optional':'missing');
+    return `<div class="wrow ${f.state}${f.optional?' opt':''}"><i class="wd"></i><div><b>${esc(f.name)}</b><small>${esc(f.what)}</small></div><span class="st">${st} \u00b7 ${mb} MB</span></div>`;
+  }).join('');
+  $('wcard').hidden=!(wopen||(!wdata.complete&&!usable));   // by itself only when nothing usable is there; otherwise on request
+}
+async function loadWeights(){ try{ wdata=await (await api('/api/weights')).json(); renderWeights(); }catch(_){ /* locked or offline: the page says so elsewhere */ } }
+$('wtoggle').onclick=()=>{ wopen=!wopen; loadWeights(); };
+$('wrecheck').onclick=()=>{ $('wrecheck').textContent='Checking...'; Promise.all([loadWeights(),api('/api/models').then(r=>r.json()).then(m=>{models=m;syncModels()}).catch(()=>{})]).then(()=>{ $('wrecheck').textContent='Check again'; }); };
+
 function start(){
-  api('/api/models').then(r=>r.json()).then(m=>{models=m;syncModels()}).catch(()=>{});
+  api('/api/models').then(r=>r.json()).then(m=>{models=m;syncModels();loadWeights()}).catch(()=>{});
   poll(); if(!timer) timer=setInterval(()=>{ if(!locked) poll(); },2500);
 }
 fetch('/api/auth').then(r=>r.json()).then(a=>{ if(a.required&&!a.ok) showLock(true); else start(); }).catch(()=>start());

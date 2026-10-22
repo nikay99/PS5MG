@@ -80,6 +80,24 @@ printf 'secret123\n' > /data/PS5MG/api-key.txt
 t "with a key: the PS5SD list needs it"      401 "$(code $U/api/ps5sd/pictures)"
 t "with a key: a PS5SD picture needs it"     401 "$(code $U/api/ps5sd/picture/sd_20261022_100000_1.png)"
 rm -f /data/PS5MG/api-key.txt
+
+# ---- /api/weights: what is on the console (read only)
+rm -rf /data/PS5MG/models/q4; mkdir -p /data/PS5MG/models
+t "weights: no folder, nothing is complete"  false "$(curl -s $U/api/weights | sed -n 's/.*"complete":\(true\|false\).*/\1/p')"
+t "weights: all ten listed"                  10  "$(curl -s $U/api/weights | grep -o '"name"' | wc -l)"
+t "weights: all missing at first"            10  "$(curl -s $U/api/weights | grep -o '"state":"missing"' | wc -l)"
+mkdir -p /data/PS5MG/models/q4
+mk() { truncate -s "$2" "/data/PS5MG/models/q4/$1"; }
+mk dinov3.gguf 172662976; mk ss_flow.gguf 730496672; mk ss_dec.gguf 147379392; mk shape_flow_512.gguf 730520576
+mk shape_dec.gguf 845423552; mk tex_flow_512.gguf 730548224; mk tex_dec.gguf 845414272
+t "weights: the required files, in full: complete" true "$(curl -s $U/api/weights | sed -n 's/.*"complete":\(true\|false\).*/\1/p')"
+t "weights: optional files may be missing"   3   "$(curl -s $U/api/weights | grep -o '"state":"missing"' | wc -l)"
+mk tex_dec.gguf 1000
+t "weights: a half-copied file is partial"   1   "$(curl -s $U/api/weights | grep -o '"state":"partial"' | wc -l)"
+t "weights: a partial file means not complete" false "$(curl -s $U/api/weights | sed -n 's/.*"complete":\(true\|false\).*/\1/p')"
+printf 'secret123\n' > /data/PS5MG/api-key.txt
+t "weights: needs the key when one is set"   401 "$(code $U/api/weights)"
+rm -f /data/PS5MG/api-key.txt
 kill %1 2>/dev/null
 [ $fail = 0 ] && echo "ALL PASSED" || echo "SOME FAILED"
 exit $fail

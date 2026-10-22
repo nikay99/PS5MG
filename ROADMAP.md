@@ -14,8 +14,12 @@ accounts, no weights hosted here. Every item below should be something you can s
 - **Pick a picture PS5SD made** on the same console, instead of copying files around. (Only a picker: PS5MG and PS5SD stay separate apps.)
 - A gallery page with turnable examples, a quick start with requirements, and issue templates.
 
+## 0.2.1: setting up the weights is easier to understand
+- The README says where the weights come from, which files do what and which one is optional.
+- The page shows which model files are missing and where they go, instead of only an error.
+
 ## 0.3.0: rock solid
-- A soak test of many jobs in a row, to prove the title's restart after every job holds up.
+- A soak test of many jobs in a row (the list is `tools/jobs-soak.txt`), to prove the title's restart after every job holds up.
 - Find why a second job in the same process runs slower, so the restart can go.
 - Pixal3D with texture at 1024 for large objects (it stops without an error message on the sword and shield pictures).
 - Cancel a running job; clearer error messages in the page.

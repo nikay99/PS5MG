@@ -4,6 +4,7 @@
 |---|---|
 | `GET /` | web interface |
 | `GET /api/status` | `busy`, `job`, `stage`, `progress`, `elapsed`, pool memory, thread count, log tail |
+| `GET /api/weights` | which of the q4 model files are on the console: `{"path", "files":[{"name","bytes","have","state":"ok\|partial\|missing","optional","what"}], "complete"}`; read only |
 | `GET /api/models` | families (`trellis`, `pixal3d`) and the weight sets found under `/data/PS5MG/models` |
 | `GET /api/jobs` | all jobs with status, settings, seconds, GLB size |
 | `POST /api/jobs` | multipart: `image` (png/jpg) **or** `from_ps5sd` (a file name from PS5SD's pictures), `family`, `weights` (`q4`/`q8`), `res` (512/1024), `texture`, `seed`, `steps`, `faces`, `atlas` (512/1024/2048, default per resolution), `uv`, `fov`, `label` |

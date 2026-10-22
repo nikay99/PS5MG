@@ -92,6 +92,43 @@ bool safe_picture_name(const std::string & n) {
     return ext(".png") || ext(".jpg") || ext(".jpeg");
 }
 
+// The weight files of the tested q4 set (ilintar/trellis2-gguf): name, exact size, what it is for. The page shows which of them are on the
+// console, so a missing or half-copied file is easy to see. Read only: nothing here downloads or checks a hash.
+struct WeightFile {
+    const char * name;
+    long         bytes;
+    const char * what;
+    bool         optional;
+};
+constexpr WeightFile kWeightFiles[] = {
+    {"birefnet.gguf", 882749024, "cuts the object out (optional: a simple cut-out is used without it)", true},
+    {"dinov3.gguf", 172662976, "image encoder (DINOv3 by Meta)", false},
+    {"ss_flow.gguf", 730496672, "rough 3D structure", false},
+    {"ss_dec.gguf", 147379392, "rough 3D structure", false},
+    {"shape_flow_512.gguf", 730520576, "shape", false},
+    {"shape_dec.gguf", 845423552, "shape", false},
+    {"tex_flow_512.gguf", 730548224, "colours and material", false},
+    {"tex_dec.gguf", 845414272, "colours and material", false},
+    {"shape_flow_1024.gguf", 730520576, "only for resolution 1024", true},
+    {"tex_flow_1024.gguf", 730548224, "only for resolution 1024", true},
+};
+
+std::string weights_json() {
+    const std::string dir = std::string(kMgDir) + "/models/q4";
+    std::string       o   = "{\"path\":\"" + esc(dir) + "\",\"files\":[";
+    bool              complete = true;
+    int               n        = 0;
+    for (const auto & f : kWeightFiles) {
+        const long        have = fsize(dir + "/" + f.name);
+        const char *      state = have < 0 ? "missing" : have < f.bytes ? "partial" : "ok";
+        if (!f.optional && std::string(state) != "ok") complete = false;
+        o += (n++ ? ",{\"name\":\"" : "{\"name\":\"") + std::string(f.name) + "\",\"bytes\":" + std::to_string(f.bytes) +
+             ",\"have\":" + std::to_string(have < 0 ? 0 : have) + ",\"state\":\"" + state + "\",\"optional\":" +
+             (f.optional ? "true" : "false") + ",\"what\":\"" + esc(f.what) + "\"}";
+    }
+    return o + "],\"complete\":" + (complete ? "true" : "false") + "}";
+}
+
 std::string status_of(const std::string & id) {
     const std::string b = std::string(kMgJobs) + "/" + id;
     if (exists(b + ".job")) return "queued";
@@ -338,6 +375,9 @@ void mg_web_run(int port) {
     });
     svr.Get("/api/status", [](const httplib::Request &, httplib::Response & res) {
         res.set_content(status_json(), "application/json");
+    });
+    svr.Get("/api/weights", [](const httplib::Request &, httplib::Response & res) {
+        res.set_content(weights_json(), "application/json");
     });
     svr.Get("/api/models", [](const httplib::Request &, httplib::Response & res) {
         res.set_content(models_json(), "application/json");

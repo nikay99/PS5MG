@@ -174,7 +174,8 @@ More numbers and the variant study (steps, q8, atlas size, face budget, seeds, P
    yourself: [docs/BUILDING.md](docs/BUILDING.md).)
 2. Copy the folder `PPSA99577/` to `/data/homebrew` on the console over FTP (port 2121).
 3. In ShadowMountPlus, rescan. The title PS5MG appears on the home screen.
-4. On a PC, in a clone of this repository, run `tools/get-weights.sh`. It shows the licences of the weights and downloads
+4. Get the weights (see [Where the weights come from](#where-the-weights-come-from): the script below, or by hand with your browser and FTP).
+   With the script: on a PC, in a clone of this repository, run `tools/get-weights.sh`. It shows the licences of the weights and downloads
    (about 6.5 GB, q4) only after you type `yes` (or pass `--accept-licenses`).
 5. Send them to the console: `PS5_HOST=<console> tools/put-weights.sh` (they land in `/data/PS5MG/models/q4`).
    Optional: `tools/get-more-weights.sh` for q8 and Pixal3D.
@@ -187,11 +188,43 @@ Build from source instead of using the release: [docs/BUILDING.md](docs/BUILDING
 
 - **The title is not on the home screen:** rescan in ShadowMountPlus, and check that `PPSA99577/` is directly inside `/data/homebrew`.
 - **The page does not open:** check that the title is running and that you use port 7870 and the console's address.
-- **"No model weights":** copy them with `tools/put-weights.sh` (step 5).
+- **"No model weights":** the page lists the missing files and where they go. Copy them (see [Where the weights come from](#where-the-weights-come-from)); "Check again" updates the list.
 - **A job failed:** click "Why?" in the page; it shows the log lines. `PS5_HOST=<console> tools/mg.sh log` prints the whole log.
 
 Picture rules for good meshes: one object, three-quarter view, plain light background, no stand, no shadow.
 Glass and flames get lost in the mesh; that is the model, not the console.
+
+## Where the weights come from
+
+PS5MG has no model weights of its own and never downloads any: you get them from their authors, once, and copy them to the console.
+Any FTP client does it (the same FTP you used to install the title).
+
+**What to get** (the tested set, `q4`, about 6.5 GB, from [ilintar/trellis2-gguf](https://huggingface.co/ilintar/trellis2-gguf), folder `q4`):
+
+| File | Size | What it is for |
+|---|---|---|
+| `birefnet.gguf` | 883 MB | cuts the object out of the picture. **Optional**: without it a simple cut-out is used, which works for plain backgrounds |
+| `dinov3.gguf` | 173 MB | the image encoder (DINOv3, by Meta): turns the picture into features for the other models |
+| `ss_flow.gguf`, `ss_dec.gguf` | 730 MB, 147 MB | the rough 3D structure |
+| `shape_flow_512.gguf`, `shape_dec.gguf` | 731 MB, 845 MB | the shape |
+| `tex_flow_512.gguf`, `tex_dec.gguf` | 731 MB, 845 MB | the colours and material |
+| `shape_flow_1024.gguf`, `tex_flow_1024.gguf` | 731 MB each | only for resolution 1024 (the page offers 1024 only when they are there) |
+
+Optional: the `q8` set from the same page (about twice as big) and [Pixal3D](https://huggingface.co/vegax87/Pixal3D)
+(five files; they go into the **same folder** as your TRELLIS set, because they share `dinov3.gguf`).
+The exact revision and the SHA-256 of every file are in [tools/weights.sha256](tools/weights.sha256).
+
+**Where they go:** `/data/PS5MG/models/q4/` on the console (for `q8`, `/data/PS5MG/models/q8/`). The page finds them by itself.
+
+**Two ways to do it**
+- **With the scripts** (a PC with Bash): `tools/get-weights.sh` shows the licences, asks you to type `yes`, downloads and checks every
+  file; `PS5_HOST=<console> tools/put-weights.sh` copies them over.
+- **By hand:** download the files from the page above in your browser, then copy them with FTP to the folder.
+
+**Licences, in short:** TRELLIS.2 and Pixal3D are MIT (use, copy and share them, keep the licence text). BiRefNet is MIT.
+**DINOv3 is under Meta's own licence**, which also allows use but with its own terms: read it
+([text](https://ai.meta.com/resources/models-and-libraries/dinov3-license)), especially before you sell anything you make.
+The GGUF conversions are by their authors on Hugging Face. Details: [Licences, plainly](#licences-plainly).
 
 ## Known problems
 
