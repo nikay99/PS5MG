@@ -240,14 +240,14 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const $=id=>document.getElementById(id);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)');
-let file=null, models=[], family='trellis';
+let file=null, models=[], family='trellis', noWeights=false;
 const STAGES=7;
 
 // ---- the form
 const drop=$('drop'), fin=$('file'), DROP0=$('droptxt').outerHTML;
 function setFile(f){
   if(!f||!f.type.startsWith('image/')){ say('That is not a picture.',true); return; }
-  file=f; $('go').disabled=false; say(f.name);
+  file=f; $('go').disabled=noWeights; if(!noWeights) say(f.name);
   const r=new FileReader(); r.onload=()=>{drop.classList.add('has'); drop.innerHTML='<img alt="Your picture" src="'+r.result+'">'}; r.readAsDataURL(f);
 }
 function say(t,bad){ const m=$('msg'); m.textContent=t; m.classList.toggle('bad',!!bad); }
@@ -264,6 +264,7 @@ function setFamily(v){ family=v; seg.dataset.i=v==='pixal3d'?1:0; seg.querySelec
 seg.onclick=e=>{ const b=e.target.closest('button'); if(b&&!b.disabled) setFamily(b.dataset.v); };
 
 function syncModels(){
+  noWeights=!models.length; if(noWeights) say('No model weights on the console yet. Copy them over first: see the README, section Quick start.',true);
   const w=$('weights'), cur=w.value; w.innerHTML=models.map(m=>`<option value="${m.dir}">${m.dir}</option>`).join('');
   if(cur) w.value=cur;
   const m=models.find(m=>m.dir===w.value)||{};
@@ -282,7 +283,7 @@ $('go').onclick=async()=>{
   try{ const r=await fetch('/api/jobs',{method:'POST',body:fd}); const j=await r.json();
     if(r.ok){ say('In the queue.'); } else say(j.error||'Something went wrong.',true);
   }catch(e){ say('No connection to the console.',true); }
-  $('go').disabled=!file; poll();
+  $('go').disabled=!file||noWeights; poll();
 };
 
 // ---- status

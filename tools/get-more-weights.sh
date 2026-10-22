@@ -2,7 +2,7 @@
 # Optional weights: the q8 TRELLIS.2 set (ilintar/trellis2-gguf) and Pixal3D (vegax87/Pixal3D). Pinned revisions,
 # every file checked against tools/weights.sha256, resumable.
 set -u
-cd "$(dirname "$0")/.." && . tools/weights-lib.sh && mkdir -p models/pixal3d models/q8
+cd "$(dirname "$0")/.." && . tools/weights-lib.sh && { accept_licenses "$@" || exit 1; } && mkdir -p models/pixal3d models/q8
 for f in pixal3d_naf pixal3d_ss_flow pixal3d_shape_flow_512 pixal3d_shape_flow_1024 pixal3d_tex_flow_1024; do
   fetch vegax87/Pixal3D $f.gguf models/pixal3d/$f.gguf || exit 1
 done

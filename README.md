@@ -5,6 +5,11 @@
 **Picture to textured 3D mesh, on the PlayStation 5.** Drop a picture in the web interface, get a game-ready GLB
 (150k faces, 1024 px texture) in one to three minutes, made entirely on the console's own GPU.
 
+> **Legal notice, short.** PS5MG contains no model weights and downloads nothing: the title has no network client, only a web
+> server for your own network. You fetch the weights yourself from their authors, after accepting their licences
+> (`tools/get-weights.sh` asks first). PS5MG is not affiliated with Sony, Microsoft or Meta, ships no exploit and asks for none.
+> Details: [Licences, plainly](#licences-plainly) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 PS5MG is the third title in the line of [PS5LM](https://github.com/cobanov/PS5LM) (language models) and
 [PS5SD](https://github.com/Darkatek7/PS5SD) (Stable Diffusion): same toolchain, same screen, same install.
 Title id `PPSA99577`.
@@ -86,7 +91,8 @@ More numbers and the variant study (steps, q8, atlas size, face budget, seeds, P
 1. **Build:** every push builds the title in GitHub Actions. Fork, push, download the artifact
    (`gh run download <id> -n ps5mg-title`), or build with Docker: [docs/BUILDING.md](docs/BUILDING.md).
 2. **Install** on a jailbroken console: copy `PPSA99577/` to `/data/homebrew/` over FTP and rescan in ShadowMountPlus.
-3. **Weights:** `tools/get-weights.sh` (about 6.5 GB, q4) on a PC, then `PS5_HOST=<console> tools/put-weights.sh`.
+3. **Weights:** `tools/get-weights.sh` (about 6.5 GB, q4) on a PC: it shows the licences of the weights and downloads only after you
+   type `yes` (or pass `--accept-licenses`). Then `PS5_HOST=<console> tools/put-weights.sh`.
    Optional: `tools/get-more-weights.sh` for q8 and Pixal3D.
 4. Start the title and open `http://<console>:7870`.
 

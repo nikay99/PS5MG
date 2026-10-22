@@ -228,6 +228,11 @@ mkdir -p "$app/licenses"
 cp "$W/LICENSE" "$app/licenses/PS5MG-GPL-3.0.txt"
 cp "$T/LICENSE" "$app/licenses/trellis.cpp-MIT.txt"
 cp "$T/thirdparty/ggml/LICENSE" "$app/licenses/ggml-MIT.txt"
+cp "$W/THIRD_PARTY_NOTICES.md" "$app/licenses/THIRD_PARTY_NOTICES.md"
+cp "$kit/THIRD_PARTY_NOTICES.md" "$app/licenses/ps5-homebrew-ui-THIRD_PARTY_NOTICES.md"
+for d in "$T"/thirdparty/*/; do   # the licence files that ship with trellis.cpp's bundled sources (some keep theirs in the headers)
+    for f in "$d"LICENSE*; do [ -f "$f" ] && cp "$f" "$app/licenses/$(basename "$d")-$(basename "$f")"; done
+done
 rev=$(git -C "$W" rev-parse HEAD 2> /dev/null || echo unknown)
 cat > "$app/SOURCE.txt" <<EOT
 PS5MG (title PPSA99577), built from https://github.com/nikay99/PS5MG at commit $rev
