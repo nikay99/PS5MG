@@ -258,13 +258,13 @@ The GGUF conversions are by their authors on Hugging Face. Details: [Licences, p
 
 - A second job in the same process is much slower, so the title restarts itself after each job. The cause is not found
   (leftover worker threads are the guess).
-- **The console gets slower after many jobs in a row.** In a test of 37 short jobs one after the other, every job finished and the restart
-  after each one worked, but from job 17 on a job took about 2.6 times as long, and it did not recover. The cause is not found (heat,
-  the system's memory or the restarts); the numbers are in [docs/RESULTS.md](docs/RESULTS.md). A restart of the console cured the same effect once.
+- Up to 0.2.2 the console got slower after about 15 jobs in a row (2.6 times). Fixed in 0.2.3: 80 jobs in a row now run at the same speed,
+  see [docs/RESULTS.md](docs/RESULTS.md). Why the console's writes slow down when a lot is written is still not known.
 - Pixal3D at 1024 with texture ran for one picture and stopped without an error on two others (probably memory).
 - One job (a chest, seed 5) took twice as long as its peers, unexplained.
 - The web interface is open unless you set a key (`tools/mg.sh setkey <key>`, see [docs/API.md](docs/API.md)); it is plain HTTP, so use it on your own network.
-- After about 60 self-restarts in one night the console once refused to start any title; a reboot of the console cured it.
+- After about 60 self-restarts in one night the console once refused to start any title; a reboot of the console cured it. With 0.2.3,
+  80 restarts in a row went through.
 
 See [ROADMAP.md](ROADMAP.md) for what is next.
 

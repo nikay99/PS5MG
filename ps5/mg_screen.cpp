@@ -30,7 +30,7 @@ int sceKernelUsleep(unsigned int microseconds);
 namespace {
 
 constexpr const char * kFont    = "/app0/assets/fonts/dejavu-sans-mono.huifont";
-constexpr const char * kVersion = "0.2.2";
+constexpr const char * kVersion = "0.2.3";
 constexpr int          kWebPort = 7870;
 
 ps5sd::AppStatus g_status;

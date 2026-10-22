@@ -44,7 +44,7 @@ Pixal3D at 512 writes a raw, geometry-only mesh in 1:25 to 2:00 (raw winding: dr
 
 The picture with the three results side by side is `docs/images/presets.jpg` (`tools/make-presets-compare.py`).
 
-## Soak test: many jobs in a row (37 of 80, stopped by hand)
+## Soak test: many jobs in a row
 
 `tools/jobs-soak.txt`: short jobs (4 steps, no texture, 20k faces) one after the other through `tools/run-queue.sh`. The title restarts itself
 after every job, so this is also a test of 37 restarts. It was stopped at job 37 so that the app could be reinstalled on the console.
@@ -62,9 +62,31 @@ after every job, so this is also a test of 37 restarts. It was stopped at job 37
 From job 17 on, the same short job takes about 2.6 times as long and it did not recover over the next 20 jobs. The first night showed the same
 pattern (CPU stages 2.5 times slower after hours of jobs, cured by restarting the console).
 
-**What is not known:** the cause. Candidates: heat (the console throttles), the system's own memory ("Internal Memory is running out" is in every job's log),
-or something that builds up with every self-restart. This test cannot tell them apart. Next steps for 0.3.0: run the same list right after a console restart and
-log the temperature; pause for ten minutes at the slow point and see whether it recovers; compare with a run that does not restart the title.
+**The cause (found for 0.2.3):** writing to the console's storage. A job's GLB took 0.3 s to write on a fresh console and 15 to 38 s
+after about 15 jobs; one log line took up to 0.7 s. The CPU, its cores, the memory and the GPU stayed as fast as at the start (measured
+with probes before, after and during the jobs). Two things in PS5MG made it much worse:
+
+- Jobs without texture skipped the face budget and wrote the whole decoded mesh, about 4.7 million faces or 30 to 130 MB a GLB (2 GB after
+  50 jobs). Now they are simplified like textured jobs (`ps5/patch-notex-faces.py`): about 0.3 MB.
+- Every printed line went straight to a file, so a slow write held up the job. Now a thread of its own writes the log twice a second, and
+  jobs no longer print the debug lines (about 80 lines a job instead of 600).
+
+Why the console's writes slow down in the first place is not known; it looks like a write buffer that fills up.
+
+### After the fix: 80 jobs in a row (0.2.3)
+
+The same list, without a console restart before it (the console had already run more than 50 jobs that evening):
+
+| jobs | median | slowest |
+|---|---|---|
+| 1 to 16 | 73 s | 136 s |
+| 17 to 32 | 72 s | 94 s |
+| 33 to 48 | 68 s | 119 s |
+| 49 to 64 | 77 s | 143 s |
+| 65 to 80 | 68 s | 101 s |
+
+All 80 finished, none failed, the title came back after all 80 restarts, and there is no slowdown. The slowest job of each block is the same
+picture (the mushroom). A job is about 10 s longer than the fastest ones before, because the mesh is now cleaned up and simplified.
 
 ## Where the time goes (lantern)
 
