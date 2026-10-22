@@ -276,7 +276,8 @@ $('weights').onchange=syncModels;
 $('go').onclick=async()=>{
   const fd=new FormData(); fd.append('image',file);
   fd.append('family',family); fd.append('texture',$('texture').checked?'on':'off');
-  for(const k of ['weights','res','seed','steps','faces','uv','label']) fd.append(k,$(k).value);
+  for(const k of ['weights','res','seed','steps','faces','uv']) fd.append(k,$(k).value);
+  fd.append('label',$('label').value.trim()||file.name.replace(/\.[^.]+$/,'').slice(0,60));   // no name given: the picture's file name
   $('go').disabled=true; say('Sending...');
   try{ const r=await fetch('/api/jobs',{method:'POST',body:fd}); const j=await r.json();
     if(r.ok){ say('In the queue.'); } else say(j.error||'Something went wrong.',true);
