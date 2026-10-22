@@ -18,6 +18,10 @@ accounts, no weights hosted here. Every item below should be something you can s
 - The README says where the weights come from, which files do what and which one is optional.
 - The page shows which model files are missing and where they go, instead of only an error.
 
+## 0.2.2: one command for the weights
+- `tools/setup-weights.sh` and `tools/setup-weights.ps1` (and a double-click `.bat` for Windows): download, check and copy the model files to the console in one go.
+- The page leads a new user through it, and the README starts with a quick start per system and direct download links.
+
 ## 0.3.0: rock solid
 - The soak test (`tools/jobs-soak.txt`) showed that the restart after every job holds up (37 of 37 jobs finished) but that jobs get about 2.6 times slower
   from job 17 on and stay slow. Find out why: heat, system memory, or the restarts (see `docs/RESULTS.md`).

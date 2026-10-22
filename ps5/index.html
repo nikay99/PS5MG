@@ -168,11 +168,29 @@ dialog.in::backdrop{opacity:1}
 .wrow{display:grid;grid-template-columns:.6rem minmax(0,1fr) auto;gap:.6rem;align-items:center;padding:.45rem 1rem;position:relative}
 .wrow+.wrow::before{content:"";position:absolute;top:0;left:1rem;right:0;height:.5px;background:var(--sep)}
 .wrow .wd{width:.6rem;height:.6rem;border-radius:50%;background:var(--label3)}
-.wrow.ok .wd{background:var(--ok)}.wrow.partial .wd{background:var(--warn)}.wrow.missing:not(.opt) .wd{background:var(--bad)}
+.wrow.ok .wd{background:var(--ok)}.wrow.partial .wd{background:var(--warn)}.wrow.missing:not(.opt) .wd{background:var(--label2)}
 .wrow b{font-weight:600;font-size:.9375rem;letter-spacing:-.01em}.wrow small{display:block;color:var(--label2);font-size:.78rem;line-height:1.3}
 .wrow .st{color:var(--label2);font-size:.8125rem;white-space:nowrap}
 .wfoot{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;padding:.5rem 1rem .6rem}
-.wfoot a{color:var(--tint);font-size:.9rem}
+.wfoot a,.wby a{color:var(--tint);font-size:.9rem}
+.wprog{padding:.1rem 1rem .5rem}.wprog span{font-size:.875rem;font-weight:600}
+.wbar{height:6px;border-radius:3px;background:var(--fill2);margin-top:.35rem;overflow:hidden}
+.wbar i{display:block;height:100%;width:0;background:var(--tint);border-radius:3px;transition:width var(--t) var(--spring)}
+.wstep{display:grid;grid-template-columns:1.6rem minmax(0,1fr);gap:.2rem .7rem;padding:.7rem 1rem;position:relative}
+.wstep::before{content:"";position:absolute;top:0;left:1rem;right:0;height:.5px;background:var(--sep)}
+.wstep>:not(i){grid-column:2;min-width:0}.wstep>i{grid-column:1;grid-row:1;width:1.6rem;height:1.6rem;border-radius:50%;background:var(--fill2);color:var(--label2);font:600 .8125rem/1.6rem var(--font);text-align:center;font-style:normal}
+.wstep b{font:600 .9375rem var(--font);letter-spacing:-.01em}
+.wstep .wnote{color:var(--label2);font-size:.8125rem;line-height:1.4}
+.wstep .seg{min-width:0;width:100%;max-width:17rem}
+.wstep .code{font-size:.78rem}
+.wstep .btn{justify-self:start;text-decoration:none}
+.wdet{border-top:.5px solid var(--sep)}
+.wdet summary{cursor:pointer;padding:.65rem 1rem;color:var(--tint);font-size:.9rem;list-style:none}
+.wdet summary::-webkit-details-marker{display:none}
+.wby{padding:.2rem 1rem .6rem}.wrow .st{white-space:normal;text-align:right}
+/* the command to copy: breaks at spaces, and the Copy button sits under it, not over it */
+#wcode{word-break:normal;overflow-wrap:break-word;padding:.6rem .8rem 2.4rem}
+#wcode .copy{top:auto;bottom:.45rem;right:.5rem}
 /* The API sheet */
 .hbtn{background:var(--fill2);border:0;color:var(--label2);font:600 .8125rem var(--font);padding:.28rem .75rem;border-radius:99px;cursor:pointer;transition:transform .35s var(--spring),color .2s}
 .hbtn:hover{color:var(--label)}.hbtn:active{transform:scale(.95);transition-duration:.08s}
@@ -271,8 +289,23 @@ dialog.in::backdrop{opacity:1}
   <div class="group wcard" id="wcard" hidden>
     <h3 id="wtitle">Model files</h3>
     <p id="wintro"></p>
-    <div id="wlist"></div>
-    <div class="wfoot"><button class="btn sec sm" id="wrecheck" type="button">Check again</button><a href="https://github.com/nikay99/PS5MG#where-the-weights-come-from" target="_blank" rel="noopener">How to get them</a></div>
+    <div class="wprog" id="wprog"><span id="wcount"></span><div class="wbar"><i id="wfill"></i></div></div>
+    <div id="wsteps">
+      <div class="wstep"><i>1</i><b>Download the PS5MG tools to your PC</b>
+        <span class="wnote">Then unzip it.</span>
+        <a class="btn sec sm" href="https://github.com/nikay99/PS5MG/archive/refs/heads/main.zip" target="_blank" rel="noopener">Download ZIP</a></div>
+      <div class="wstep"><i>2</i><b>Run one command</b>
+        <div class="seg" id="wos" data-i="0" role="radiogroup" aria-label="Your computer"><i class="thumb"></i>
+          <button type="button" role="radio" aria-checked="true" data-os="win">Windows</button>
+          <button type="button" role="radio" aria-checked="false" data-os="unix">macOS / Linux</button></div>
+        <div class="code" id="wcode"><span id="wcmd"></span><button class="copy" id="wcopy" type="button">Copy</button></div>
+        <span class="wnote" id="wbat"></span>
+        <span class="wnote">It shows the licences, asks you to type yes, downloads the files from their authors, checks them and copies them to the console.</span></div>
+      <div class="wstep"><i>3</i><b>Come back here</b>
+        <div><button class="btn sec sm" id="wrecheck" type="button">Check again</button></div></div>
+    </div>
+    <details class="wdet" id="wdet"><summary id="wsum">What gets copied</summary><div id="wlist"></div></details>
+    <div class="wby" id="wby"><a href="https://github.com/nikay99/PS5MG#where-the-weights-come-from" target="_blank" rel="noopener">Prefer to do it by hand?</a></div>
   </div>
   <button class="btn full" id="go" disabled>Make mesh</button>
   <div class="hint" id="msg" role="status" aria-live="polite">Choose a picture to start.</div>
@@ -380,7 +413,7 @@ function setFamily(v){ family=v; seg.dataset.i=v==='pixal3d'?1:0; seg.querySelec
 seg.onclick=e=>{ const b=e.target.closest('button'); if(b&&!b.disabled) setFamily(b.dataset.v); };
 
 function syncModels(){
-  noWeights=!models.length; if(noWeights) say('No model weights on the console yet. Copy them over first: see the README, section Quick start.',true);
+  noWeights=!models.length; if(noWeights) say('Add the model files first (see above).');
   const w=$('weights'), cur=w.value; w.innerHTML=models.map(m=>`<option value="${m.dir}">${m.dir}</option>`).join('');
   if(cur) w.value=cur;
   const m=models.find(m=>m.dir===w.value)||{};
@@ -573,21 +606,37 @@ $('apibody').onclick=async e=>{ const b=e.target.closest('.copy'); if(!b) return
 
 // ---- the model files on the console: shown by itself when they are missing, on request otherwise
 let wdata=null, wopen=false;
+const WOS=/Win/i.test(navigator.platform||navigator.userAgent)||/Windows/i.test(navigator.userAgent)?'win':'unix';
+let wos=WOS;
+function wcmd(){ const h=location.hostname; return wos==='win'?`powershell -ExecutionPolicy Bypass -File .\\tools\\setup-weights.ps1 ${h}`:`./tools/setup-weights.sh ${h}`; }
+function setOs(v){ wos=v; $('wos').dataset.i=v==='win'?0:1; $('wos').querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',b.dataset.os===v));
+  $('wcmd').innerHTML=wcmd().split(' ').map(w=>`<span style="white-space:nowrap">${esc(w)}</span>`).join(' '); $('wbat').innerHTML=v==='win'?'Or just double-click <code>tools\\setup-weights.bat</code> (it asks for the address).':''; }
+$('wos').onclick=e=>{ const b=e.target.closest('button'); if(b) setOs(b.dataset.os); };
+$('wcopy').onclick=async()=>{ const b=$('wcopy'), t=$('wcmd').textContent;
+  try{ await navigator.clipboard.writeText(t); }
+  catch(_){ const r=document.createRange(); r.selectNodeContents($('wcmd')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  b.textContent='Copied'; setTimeout(()=>{ b.textContent='Copy'; },1400); };
+setOs(WOS);
 function renderWeights(){
   if(!wdata) return;
-  const miss=wdata.files.filter(f=>!f.optional&&f.state!=='ok').length;
-  const usable=models.length>0;
-  $('wtoggle').textContent=wdata.complete?'Complete':(usable?'Check':`${miss} missing`);
-  $('wtitle').textContent=wdata.complete?'Model files: complete':usable?'Model files: some are missing':'The model files are not on the console yet';
-  $('wintro').innerHTML=wdata.complete
+  const req=wdata.files.filter(f=>!f.optional), miss=req.filter(f=>f.state!=='ok').length;
+  const usable=models.length>0, done=wdata.complete;
+  $('wtoggle').textContent=done?'Complete':(usable?'Check':`${miss} missing`);
+  $('wtitle').textContent=done?'Model files: complete':usable?'Almost there: some model files are missing':'One step left: add the model files';
+  $('wintro').innerHTML=done
     ?`All required files are in <code>${esc(wdata.path)}</code>.`
-    :`PS5MG needs the model weights, and they are not part of the app. Get them from their authors and copy them with FTP to <code>${esc(wdata.path)}</code>. Red means missing, orange means only partly copied.`;
+    :'PS5MG needs the model files (about 6.5 GB, once). One command on your PC gets them and copies them here.';
+  const tot=req.reduce((n,f)=>n+f.bytes,0), have=req.reduce((n,f)=>n+(f.state==='ok'?f.bytes:Math.min(f.have||0,f.bytes)),0);
+  $('wcount').textContent=`${req.length-miss} of ${req.length} files on the console`;
+  $('wfill').style.width=(tot?Math.round(100*have/tot):0)+'%';
+  $('wprog').hidden=done; $('wsteps').hidden=done; $('wby').hidden=done;
+  $('wsum').textContent=`What gets copied (${wdata.files.length} files)`;
   $('wlist').innerHTML=wdata.files.map(f=>{
     const mb=Math.round(f.bytes/1048576);
     const st=f.state==='ok'?'there':f.state==='partial'?`${Math.round(f.have/1048576)} of ${mb} MB`:(f.optional?'optional':'missing');
-    return `<div class="wrow ${f.state}${f.optional?' opt':''}"><i class="wd"></i><div><b>${esc(f.name)}</b><small>${esc(f.what)}</small></div><span class="st">${st} \u00b7 ${mb} MB</span></div>`;
+    return `<div class="wrow ${f.state}${f.optional?' opt':''}"><i class="wd"></i><div><b>${esc(f.name)}</b><small>${esc(f.what)}${f.optional&&f.state==='ok'?' (optional)':''}</small></div><span class="st">${st} · ${mb} MB</span></div>`;
   }).join('');
-  $('wcard').hidden=!(wopen||(!wdata.complete&&!usable));   // by itself only when nothing usable is there; otherwise on request
+  $('wcard').hidden=!(wopen||(!done&&!usable));   // by itself only when nothing usable is there; otherwise on request
 }
 async function loadWeights(){ try{ wdata=await (await api('/api/weights')).json(); renderWeights(); }catch(_){ /* locked or offline: the page says so elsewhere */ } }
 $('wtoggle').onclick=()=>{ wopen=!wopen; loadWeights(); };

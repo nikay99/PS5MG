@@ -70,6 +70,58 @@ Title id `PPSA99577`.
 
 ![a picture and the textured mesh PS5MG made from it on the console](docs/images/hero.jpg)
 
+## Quick start
+
+**You need:** a console that can run homebrew titles (ShadowMountPlus) with an FTP server on port 2121, a PC (Windows, macOS or
+Linux) on the same network, and about 7 GB free on the console. Which exploit and firmware you need is outside this project, as with
+PS5SD and PS5LM.
+
+### 1. Install PS5MG
+
+- **From the PS5 Homebrew Store** (ProsperoStore, [prosperostore.net](https://prosperostore.net)): search for PS5MG.
+- **Or by hand:** download `PPSA99577.zip` from the [latest release](https://github.com/nikay99/PS5MG/releases/latest), unzip it, copy the
+  folder `PPSA99577` to `/data/homebrew` on the console with any FTP client (port 2121), then rescan in ShadowMountPlus.
+  (Or build it yourself: [docs/BUILDING.md](docs/BUILDING.md).)
+
+### 2. Put the model files on the console (one command)
+
+PS5MG does not include the model files (about 6.5 GB). One command on your PC downloads them from their authors, checks them and copies
+them to the console. First get the PS5MG tools: **[Download ZIP](https://github.com/nikay99/PS5MG/archive/refs/heads/main.zip)** and unzip it
+(or `git clone` this repository). Then, in that folder, use your console's address in place of `192.168.1.50`:
+
+**Windows**: double-click `tools\setup-weights.bat` (it asks for the address), or in a terminal:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\setup-weights.ps1 192.168.1.50
+```
+
+**macOS / Linux** (also WSL and Git Bash):
+
+```sh
+./tools/setup-weights.sh 192.168.1.50
+```
+
+It shows the licences of the models and asks you to type `yes`; then it downloads, checks every file and copies it to
+`/data/PS5MG/models/q4/` on the console. If it stops (Wi-Fi, sleep), run it again: it continues where it was and skips what is already there.
+Options: `--no-birefnet` leaves out the 883 MB cut-out model (optional, a simple cut-out is used instead), `--pixal3d` adds the Pixal3D files,
+`--set q8` uses the larger q8 set. The PowerShell version takes `-NoBirefnet`, `-Pixal3d` and `-Set q8`.
+
+### 3. Make your first mesh
+
+Start PS5MG from its icon, open `http://<console>:7870` in a browser, drop a picture. A textured mesh is ready in one to three minutes.
+The page tells you if a model file is still missing, and which one.
+
+### If something does not work
+
+- **The title is not on the home screen:** rescan in ShadowMountPlus, and check that `PPSA99577/` is directly inside `/data/homebrew`.
+- **The page does not open:** check that the title is running and that you use port 7870 and the console's address.
+- **The page says model files are missing:** run the command of step 2 again; "Check again" on the page updates the list.
+- **The command cannot reach the console:** is the FTP server on the console running, on port 2121, and is the address right?
+- **A job failed:** click "Why?" in the page; it shows the log lines. `PS5_HOST=<console> tools/mg.sh log` prints the whole log.
+
+Picture rules for good meshes: one object, three-quarter view, plain light background, no stand, no shadow.
+Glass and flames get lost in the mesh; that is the model, not the console.
+
 ## Examples
 
 **[Turn them around in the gallery](https://nikay99.github.io/PS5MG/)**: ten of these, as meshes you can rotate in the browser.
@@ -157,84 +209,62 @@ All of it is applied at build time (`scripts/build-mg.sh`); trellis.cpp is clone
 More numbers and the variant study (steps, q8, atlas size, face budget, seeds, Pixal3D at 1024) are in
 [docs/RESULTS.md](docs/RESULTS.md).
 
-## Quick start
-
-### Requirements
-
-- A console that can run homebrew titles with ShadowMountPlus. Which exploit and firmware you need is outside this project, as with PS5SD and PS5LM.
-- An FTP server on the console, reachable on port 2121.
-- elfldr listening on port 9021 (only needed for the launch payload, `tools/mg.sh launch`).
-- A PC or phone on the same network.
-- About 7 GB free on the console for the q4 weights (the download is about 6.5 GB).
-- A modern browser (the viewer loads three.js from a CDN, so the browser needs internet).
-
-### First mesh in 10 minutes
-
-1. Download the zip from the [latest release](https://github.com/nikay99/PS5MG/releases/latest) and unpack it. (Or build it
-   yourself: [docs/BUILDING.md](docs/BUILDING.md).)
-2. Copy the folder `PPSA99577/` to `/data/homebrew` on the console over FTP (port 2121).
-3. In ShadowMountPlus, rescan. The title PS5MG appears on the home screen.
-4. Get the weights (see [Where the weights come from](#where-the-weights-come-from): the script below, or by hand with your browser and FTP).
-   With the script: on a PC, in a clone of this repository, run `tools/get-weights.sh`. It shows the licences of the weights and downloads
-   (about 6.5 GB, q4) only after you type `yes` (or pass `--accept-licenses`).
-5. Send them to the console: `PS5_HOST=<console> tools/put-weights.sh` (they land in `/data/PS5MG/models/q4`).
-   Optional: `tools/get-more-weights.sh` for q8 and Pixal3D.
-6. Start the title from its icon (or `PS5_HOST=<console> tools/mg.sh launch`).
-7. Open `http://<console>:7870` in a browser and drop a picture.
-
-Build from source instead of using the release: [docs/BUILDING.md](docs/BUILDING.md) (GitHub Actions or Docker).
-
-### If something does not work
-
-- **The title is not on the home screen:** rescan in ShadowMountPlus, and check that `PPSA99577/` is directly inside `/data/homebrew`.
-- **The page does not open:** check that the title is running and that you use port 7870 and the console's address.
-- **"No model weights":** the page lists the missing files and where they go. Copy them (see [Where the weights come from](#where-the-weights-come-from)); "Check again" updates the list.
-- **A job failed:** click "Why?" in the page; it shows the log lines. `PS5_HOST=<console> tools/mg.sh log` prints the whole log.
-
-Picture rules for good meshes: one object, three-quarter view, plain light background, no stand, no shadow.
-Glass and flames get lost in the mesh; that is the model, not the console.
-
 ## Where the weights come from
 
-PS5MG has no model weights of its own and never downloads any: you get them from their authors, once, and copy them to the console.
-Any FTP client does it (the same FTP you used to install the title).
-
-**What to get** (the tested set, `q4`, about 6.5 GB, from [ilintar/trellis2-gguf](https://huggingface.co/ilintar/trellis2-gguf), folder `q4`):
+PS5MG has no model weights of its own and never downloads any: the command above (or you, by hand) gets them from their authors, once.
+This is what it fetches, from [ilintar/trellis2-gguf](https://huggingface.co/ilintar/trellis2-gguf) (TRELLIS.2 as GGUF, folder `q4`, a fixed
+revision). **Each name is a direct download link** if you prefer your browser:
 
 | File | Size | What it is for |
 |---|---|---|
-| `birefnet.gguf` | 883 MB | cuts the object out of the picture. **Optional**: without it a simple cut-out is used, which works for plain backgrounds |
-| `dinov3.gguf` | 173 MB | the image encoder (DINOv3, by Meta): turns the picture into features for the other models |
-| `ss_flow.gguf`, `ss_dec.gguf` | 730 MB, 147 MB | the rough 3D structure |
-| `shape_flow_512.gguf`, `shape_dec.gguf` | 731 MB, 845 MB | the shape |
-| `tex_flow_512.gguf`, `tex_dec.gguf` | 731 MB, 845 MB | the colours and material |
-| `shape_flow_1024.gguf`, `tex_flow_1024.gguf` | 731 MB each | only for resolution 1024 (the page offers 1024 only when they are there) |
+| [`birefnet.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/birefnet.gguf) | 883 MB | cuts the object out of the picture (**optional**: without it a simple cut-out is used) |
+| [`dinov3.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/dinov3.gguf) | 173 MB | image encoder (DINOv3, by Meta): turns the picture into features |
+| [`shape_dec.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/shape_dec.gguf) | 845 MB | the shape |
+| [`shape_flow_1024.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/shape_flow_1024.gguf) | 731 MB | only for resolution 1024 |
+| [`shape_flow_512.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/shape_flow_512.gguf) | 731 MB | the shape |
+| [`ss_dec.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/ss_dec.gguf) | 147 MB | rough 3D structure |
+| [`ss_flow.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/ss_flow.gguf) | 730 MB | rough 3D structure |
+| [`tex_dec.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/tex_dec.gguf) | 845 MB | colours and material |
+| [`tex_flow_1024.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/tex_flow_1024.gguf) | 731 MB | only for resolution 1024 |
+| [`tex_flow_512.gguf`](https://huggingface.co/ilintar/trellis2-gguf/resolve/a57397bd3d351599d9729fc144b3f87c3f87d65b/q4/tex_flow_512.gguf) | 731 MB | colours and material |
 
-Optional: the `q8` set from the same page (about twice as big) and [Pixal3D](https://huggingface.co/vegax87/Pixal3D)
-(five files; they go into the **same folder** as your TRELLIS set, because they share `dinov3.gguf`).
-The exact revision and the SHA-256 of every file are in [tools/weights.sha256](tools/weights.sha256).
+Copy them with any FTP client to `/data/PS5MG/models/q4/` on the console. The exact revision and the SHA-256 of every file are in
+[tools/weights.sha256](tools/weights.sha256).
 
-**Where they go:** `/data/PS5MG/models/q4/` on the console (for `q8`, `/data/PS5MG/models/q8/`). The page finds them by itself.
+<details>
+<summary>More: the q8 set, Pixal3D, and the licences</summary>
 
-**Two ways to do it**
-- **With the scripts** (a PC with Bash): `tools/get-weights.sh` shows the licences, asks you to type `yes`, downloads and checks every
-  file; `PS5_HOST=<console> tools/put-weights.sh` copies them over.
-- **By hand:** download the files from the page above in your browser, then copy them with FTP to the folder.
+**q8** is the same set at higher precision (about twice as big), in the folder `q8` of the same page; copy it to `/data/PS5MG/models/q8/`.
+
+**Pixal3D** ([vegax87/Pixal3D](https://huggingface.co/vegax87/Pixal3D)) is an optional second model. Its five files go into the **same folder**
+as your TRELLIS set, because they share `dinov3.gguf`:
+
+| File | Size |
+|---|---|
+| [`pixal3d_naf.gguf`](https://huggingface.co/vegax87/Pixal3D/resolve/51de7d1764f4b735c4e3aaea40e5ba60c18ca707/pixal3d_naf.gguf) | 1 MB |
+| [`pixal3d_shape_flow_1024.gguf`](https://huggingface.co/vegax87/Pixal3D/resolve/51de7d1764f4b735c4e3aaea40e5ba60c18ca707/pixal3d_shape_flow_1024.gguf) | 2776 MB |
+| [`pixal3d_shape_flow_512.gguf`](https://huggingface.co/vegax87/Pixal3D/resolve/51de7d1764f4b735c4e3aaea40e5ba60c18ca707/pixal3d_shape_flow_512.gguf) | 2776 MB |
+| [`pixal3d_ss_flow.gguf`](https://huggingface.co/vegax87/Pixal3D/resolve/51de7d1764f4b735c4e3aaea40e5ba60c18ca707/pixal3d_ss_flow.gguf) | 2682 MB |
+| [`pixal3d_tex_flow_1024.gguf`](https://huggingface.co/vegax87/Pixal3D/resolve/51de7d1764f4b735c4e3aaea40e5ba60c18ca707/pixal3d_tex_flow_1024.gguf) | 2776 MB |
 
 **Licences, in short:** TRELLIS.2 and Pixal3D are MIT (use, copy and share them, keep the licence text). BiRefNet is MIT.
 **DINOv3 is under Meta's own licence**, which also allows use but with its own terms: read it
 ([text](https://ai.meta.com/resources/models-and-libraries/dinov3-license)), especially before you sell anything you make.
 The GGUF conversions are by their authors on Hugging Face. Details: [Licences, plainly](#licences-plainly).
 
+</details>
+
 ## Known problems
 
 - A second job in the same process is much slower, so the title restarts itself after each job. The cause is not found
-  (leftover worker threads are the guess). A long soak test of the self-restart is still to do.
+  (leftover worker threads are the guess).
+- **The console gets slower after many jobs in a row.** In a test of 37 short jobs one after the other, every job finished and the restart
+  after each one worked, but from job 17 on a job took about 2.6 times as long, and it did not recover. The cause is not found (heat,
+  the system's memory or the restarts); the numbers are in [docs/RESULTS.md](docs/RESULTS.md). A restart of the console cured the same effect once.
 - Pixal3D at 1024 with texture ran for one picture and stopped without an error on two others (probably memory).
 - One job (a chest, seed 5) took twice as long as its peers, unexplained.
 - The web interface is open unless you set a key (`tools/mg.sh setkey <key>`, see [docs/API.md](docs/API.md)); it is plain HTTP, so use it on your own network.
-- During one night's run the CPU stages turned 2.5 times slower for hours and the console later refused to start
-  titles; a reboot of the console cured both. Whether the self-restart plays a part is not known.
+- After about 60 self-restarts in one night the console once refused to start any title; a reboot of the console cured it.
 
 See [ROADMAP.md](ROADMAP.md) for what is next.
 

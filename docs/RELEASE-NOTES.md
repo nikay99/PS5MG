@@ -1,17 +1,18 @@
-## PS5MG 0.2.1
+## PS5MG 0.2.2
 
 ### Before you start: the model weights
-PS5MG has no model weights of its own and never downloads any. You get them once from their authors and copy them to the console with FTP.
-- What: the TRELLIS.2 files, about 6.5 GB ("q4"), from Hugging Face: ilintar/trellis2-gguf, folder q4.
-- Where: /data/PS5MG/models/q4 on the console. The page finds them by itself.
-- The list of files, what each one is for, the licences and a script that downloads and checks them are in the README on GitHub (nikay99/PS5MG), section "Where the weights come from".
+PS5MG has no model weights of its own and never downloads any. One command on your PC gets them from their authors and copies them to the console.
+- Get the PS5MG tools: on GitHub (nikay99/PS5MG) press Code, then Download ZIP, and unzip it.
+- Windows: double-click tools\setup-weights.bat and type your console's address. macOS and Linux: run ./tools/setup-weights.sh with your console's address.
+- It shows the licences and asks you to type yes. Then it downloads the files (about 6.5 GB, from Hugging Face), checks each one and copies it to /data/PS5MG/models/q4 on the console. If it stops, run it again: it continues where it was.
 - Licences in short: TRELLIS.2 and Pixal3D are MIT. DINOv3, which is part of the set, has Meta's own licence.
 
 ### New
-- When the model files are missing, the page now says which ones, with their sizes, and where to put them. Under More options, "Model files" shows whether the set is complete.
-- The README explains where the weights come from, which files do what, and which one is optional (the cut-out model).
+- A one-command tool for the weights on Windows, macOS and Linux: download, check, copy to the console over FTP.
+- When model files are missing, the page now leads you through it: three short steps, the command ready to copy with your console's address, and a progress line (for example 3 of 7 files). The long file list is folded away.
+- The README starts with a short quick start for each system, and every model file has a direct download link on a fixed version.
 
 ### Unchanged
 - The title has no network client and downloads nothing.
-- The title restarts itself after every job.
+- The title restarts itself after every job, and after many jobs in a row the console gets slower (see the README, Known problems).
 - Pixal3D with texture at 1024 can stop without an error message.

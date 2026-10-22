@@ -86,7 +86,7 @@ int main(int argc, char ** argv) {
         s.job_s                      = job_s;
         s.last_job_s                 = last_job_s >= 0 ? last_job_s : s.last_job_s;
         dashboard.update(s, 1.0f / 60.0f);
-        dashboard.compose(renderer, "0.2.1");
+        dashboard.compose(renderer, "0.2.2");
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT);
