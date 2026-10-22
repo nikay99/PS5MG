@@ -139,7 +139,7 @@ jobs:
           path: build/tools/launch-mg.elf
           if-no-files-found: error
 
-  # A tag v* publishes a release with the title zip, the launch payload and the checksums.
+  # A tag v* publishes a release with the title zip (docs/RELEASE-NOTES.md as its description).
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: title
@@ -147,6 +147,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
       - uses: actions/download-artifact@v4
         with:
           name: ps5mg-release
@@ -155,4 +158,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "PS5MG ${GITHUB_REF_NAME#v}"             --notes "Title PPSA99577 for ShadowMountPlus, the launch payload and SHA256SUMS. No model weights: see the README."
+          # only the title zip: the PS5 homebrew catalog wants exactly one installable file per release
+          gh release create "$GITHUB_REF_NAME" dist/PPSA99577.zip --repo "$GITHUB_REPOSITORY" --title "PS5MG ${GITHUB_REF_NAME#v}"             --notes-file docs/RELEASE-NOTES.md

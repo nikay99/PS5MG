@@ -1,4 +1,4 @@
-"""Makes ps5/sce_sys/icon0.png, icon0.dds, pic0.dds, pic1.dds for the title (own artwork, no PS5SD placeholders).
+"""Makes sce_sys/icon0.png, icon0.dds, pic0.dds, pic1.dds for the title (own artwork, no PS5SD placeholders).
 usage: python make-icons.py <transparent-render.png>      (tools/render-glb.py <glb> out.png alpha single)
 The DDS files are BC7 (mode 6 only, a small encoder here): same header layout as PS5SD's, 4:1 smaller than RGBA."""
 import os, struct, sys
@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 here = os.path.dirname(os.path.abspath(__file__))
-out = os.path.join(os.path.dirname(here), "ps5", "sce_sys")
+out = os.path.join(os.path.dirname(here), "sce_sys")
 obj = Image.open(sys.argv[1]).convert("RGBA")
 bbox = obj.getbbox(); obj = obj.crop(bbox)
 

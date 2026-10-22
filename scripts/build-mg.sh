@@ -3,7 +3,7 @@
 # with the repository mounted at /work, after scripts/setup-deps.sh (see docs/BUILDING.md). Recipe: PS5SD's
 # scripts/build-app.sh (adapted from PS5LM, GPL-3.0).
 #   .deps/trellis.cpp       trellis.cpp @ 8e4ce11 + pwilkin/ggml @ f8697b3 + PS5SD's patches/ggml (cloned here)
-#   ps5/                    this repository's title (CMakeLists.txt, mg_main.cpp, mg_web.cpp, screen/, sce_sys)
+#   ps5/                    this repository's title (CMakeLists.txt, mg_main.cpp, mg_web.cpp, screen/); sce_sys/ at the root
 #   third_party/PS5SD       the PS5SD submodule: toolchain wrappers, deps (.deps), the screen's UI kit
 #
 # The screen (PS5SD's dashboard through ps5-opengl and ps5-homebrew-ui) is built when the ps5-opengl SDK is in
@@ -213,9 +213,9 @@ sdk_stubs=("$sdk"/target/lib/*.so)
 app=$out/title/PPSA99577
 rm -rf "$app"; mkdir -p "$app/sce_sys" "$app/sce_module"
 "$tool" self --sign --in "$out/eboot.elf" --out "$app/eboot.bin" --magic 0x1D3D154F
-cp "$W/ps5/sce_sys/param.json" "$app/sce_sys/param.json"
+cp "$W/sce_sys/param.json" "$app/sce_sys/param.json"
 # Icon and backgrounds are PS5SD's (placeholders; ShadowMountPlus copies them at registration).
-cp "$W"/ps5/sce_sys/{icon0.png,icon0.dds,pic0.dds,pic1.dds} "$app/sce_sys/"
+cp "$W"/sce_sys/{icon0.png,icon0.dds,pic0.dds,pic1.dds} "$app/sce_sys/"
 cp "$vk/runtime/libc.prx" "$app/sce_module/libc.prx"
 if [ $display = 1 ]; then
     # The dashboard's fonts, with their licences (main reads /app0/assets/fonts/dejavu-sans-mono.huifont).
