@@ -56,7 +56,7 @@ Title id `PPSA99577`.
   resolution, texture, steps and more under More options); a queue with live stage and progress; finished meshes in a 3D viewer
   (three.js from a CDN, so the browser needs internet) with GLB, STL and OBJ downloads.
 - **A REST API** for scripts: the page's **API** button shows ready-made `curl` calls for your console (with a copy button and a
-  hint whether it is protected by a key); the full list is in [docs/API.md](docs/API.md).
+  hint whether it is protected by a key); see [Use it from a script](#use-it-from-a-script) and [docs/API.md](docs/API.md).
 - **The PS5 screen:** PS5SD's dashboard (state, QR code of the web address, running job with its picture, time left,
   memory, log).
 - **Two model families:** [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) (textured meshes, the default) and
@@ -101,6 +101,27 @@ The page has three presets. This is one picture (the gargoyle) made with each, s
 
 In the close-up, Fast shows blocky patches in the texture around the nose and mouth; Detailed has a crisper texture and cleaner
 edges. More steps change the shape a little as well, they do not only sharpen it. A Detailed GLB is bigger (18 MB here, 7 MB for the others).
+
+## Use it from a script
+
+Everything the page does is an HTTP call, so scripts, a phone shortcut or a batch loop can make meshes too. The page's **API** button
+shows ready-made calls for your console. The settings are form fields of `POST /api/jobs`: `family`, `weights`, `res`, `texture`,
+`seed`, `steps`, `faces`, `atlas`, `uv` and `label`. Send them with `curl -F` or `curl -d`, or in the query string.
+
+```sh
+# a detailed mesh, another seed, no texture
+curl -F image=@picture.png -F steps=12 -F faces=300000 -F atlas=2048 -F seed=7 -F texture=off http://<console>:7870/api/jobs
+# {"id":"w20261022-141752-0"}
+
+curl http://<console>:7870/api/jobs                                       # the queue: status, seconds, size
+curl -o mesh.glb http://<console>:7870/api/jobs/w20261022-141752-0/glb   # the finished mesh
+
+# a picture PS5SD made on the same console
+curl -d from_ps5sd=sd_20261022_101919_003.png -d steps=6 http://<console>:7870/api/jobs
+```
+
+A number out of range is clamped, a wrong choice is answered with `400` and the reason. If the console is protected with a key
+(`tools/mg.sh setkey <key>`), add `-H "Authorization: Bearer <key>"`. All fields, values and defaults: [docs/API.md](docs/API.md).
 
 ## How fast
 
