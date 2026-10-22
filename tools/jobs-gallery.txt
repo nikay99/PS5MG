@@ -1,11 +1,11 @@
 # web gallery: small meshes (40k faces, 512 px texture) so every file stays small
-gal_helmet|/data/PS5MG/in/gal_g_helmet.png /data/PS5MG/out/gal_helmet.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_gargoyle|/data/PS5MG/in/gal_g_gargoyle.png /data/PS5MG/out/gal_gargoyle.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_dragon|/data/PS5MG/in/gal_g_dragon.png /data/PS5MG/out/gal_dragon.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_mushroom|/data/PS5MG/in/gal_g_mushroom.png /data/PS5MG/out/gal_mushroom.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_anvil|/data/PS5MG/in/gal_g_anvil.png /data/PS5MG/out/gal_anvil.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_knight|/data/PS5MG/in/gal_g_knight.png /data/PS5MG/out/gal_knight.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_robot|/data/PS5MG/in/gal_g_robot.png /data/PS5MG/out/gal_robot.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_lantern|/data/PS5MG/in/gal_z_lantern.png /data/PS5MG/out/gal_lantern.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_blaster|/data/PS5MG/in/gal_z_blaster.png /data/PS5MG/out/gal_blaster.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
-gal_potion|/data/PS5MG/in/gal_z_potion.png /data/PS5MG/out/gal_potion.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv -v --faces 40000 --atlas 512
+gal_helmet|/data/PS5MG/in/gal_g_helmet.png /data/PS5MG/out/gal_helmet.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_gargoyle|/data/PS5MG/in/gal_g_gargoyle.png /data/PS5MG/out/gal_gargoyle.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_dragon|/data/PS5MG/in/gal_g_dragon.png /data/PS5MG/out/gal_dragon.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_mushroom|/data/PS5MG/in/gal_g_mushroom.png /data/PS5MG/out/gal_mushroom.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_anvil|/data/PS5MG/in/gal_g_anvil.png /data/PS5MG/out/gal_anvil.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_knight|/data/PS5MG/in/gal_g_knight.png /data/PS5MG/out/gal_knight.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_robot|/data/PS5MG/in/gal_g_robot.png /data/PS5MG/out/gal_robot.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_lantern|/data/PS5MG/in/gal_z_lantern.png /data/PS5MG/out/gal_lantern.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_blaster|/data/PS5MG/in/gal_z_blaster.png /data/PS5MG/out/gal_blaster.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512
+gal_potion|/data/PS5MG/in/gal_z_potion.png /data/PS5MG/out/gal_potion.glb -m /data/PS5MG/models/q4 --res 512 -s 1234 --fa-fast --steps 8 --box-uv --faces 40000 --atlas 512

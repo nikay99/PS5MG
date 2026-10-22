@@ -6,6 +6,7 @@
 // /data/PS5MG/quit       create it and the title exits itself
 #include <dirent.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <pthread.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -13,6 +14,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <mutex>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -79,72 +81,104 @@ std::atomic<bool> g_done{false};
 std::atomic<bool> g_restart{false};  // a job ran in this process: the next one gets a fresh one
 std::chrono::steady_clock::time_point g_t0 = std::chrono::steady_clock::now();
 
-// stdout/stderr go to app.raw (freopen, which works on the console); this thread follows that file and writes
-// app.log with the seconds since start in front of each line.
-void * stamp_log(void *) {
-    FILE * out = fopen(kLog, "a");
-    FILE * jobout = nullptr;
+// stdout/stderr go into a pipe (or, if there is none, to app.raw through freopen); stamp_log reads them and puts each
+// line, with the seconds since start in front, in a queue; write_log writes the queue to app.log and the job's log twice
+// a second. After many jobs in a row a single write to a file on the console took up to a second, and when the
+// threads that print waited for the disk (the CPU stages printed hundreds of lines), a job took about twice as long.
+int g_log_in = -1;  // the pipe's read end, or -1 for app.raw
+std::mutex g_wmu;
+std::vector<std::pair<std::string, std::string>> g_wq;  // (job, line) not yet on disk
+
+void write_log() {
+    FILE *      out    = fopen(kLog, "a");
+    FILE *      jobout = nullptr;
     std::string jobname;
-    FILE * in  = nullptr;
-    while (!in) {
-        in = fopen(kRaw, "r");
-        if (!in) usleep(100000);
+    std::vector<std::pair<std::string, std::string>> batch;
+    for (;;) {
+        usleep(500000);
+        {
+            std::lock_guard<std::mutex> lk(g_wmu);
+            batch.swap(g_wq);
+        }
+        for (const auto & [job, line] : batch) {
+            if (out) std::fputs(line.c_str(), out);
+            // The running job's own log: /data/PS5MG/logs/<job>.log
+            if (job != jobname) {
+                if (jobout) fclose(jobout);
+                jobname = job;
+                jobout  = job.empty() ? nullptr : fopen((std::string(kLogs) + "/" + job + ".log").c_str(), "w");
+            }
+            if (jobout) std::fputs(line.c_str(), jobout);
+        }
+        batch.clear();
+        if (out) fflush(out);
+        if (jobout) fflush(jobout);
+    }
+}
+
+void * stamp_log(void *) {
+    std::thread(write_log).detach();
+    int         in = g_log_in;
+    while (in < 0) {
+        in = open(kRaw, O_RDONLY);
+        if (in < 0) usleep(100000);
     }
     std::string line;
-    int         c;
+    char        buf[4096];
+    char        stamp[16];
     for (;;) {
-        c = fgetc(in);
-        if (c == EOF) {
-            clearerr(in);
-            usleep(100000);
-            fflush(stdout);
-            continue;
+        ssize_t n = 0;
+        if (g_log_in >= 0) {
+            // Never fflush(stdout) here: it would write into the pipe this thread reads, and a full pipe would hang it.
+            // The main loop flushes stdout.
+            pollfd p{in, POLLIN, 0};
+            if (poll(&p, 1, 200) > 0) n = read(in, buf, sizeof buf);
+        } else {
+            n = read(in, buf, sizeof buf);
+            if (n <= 0) {  // app.raw at its end: wait, and push out stdout, which is fully buffered
+                usleep(100000);
+                fflush(stdout);
+            }
         }
-        // Progress bars end their lines with \r: a line ends at \n or \r.
-        if (c != '\n' && c != '\r') {
-            line += static_cast<char>(c);
-            continue;
-        }
-        // The OpenGL driver of the screen reports its frames ("[ps5-gallium] ...", "[ps5-driver-cycles] ...") every
-        // second or so; that is not what the log is for.
-        if (line.empty() || line.compare(0, 5, "[ps5-") == 0) {
-            line.clear();
-            continue;
-        }
-        std::fprintf(out, "[%7.1f] %s\n", mg_now(), line.c_str());
-        std::fflush(out);
-        {
-            // The running job's own log: /data/PS5MG/logs/<job>.log
-            std::string cur;
+        for (ssize_t k = 0; k < n; k++) {
+            const char c = buf[k];
+            // Progress bars end their lines with \r: a line ends at \n or \r.
+            if (c != '\n' && c != '\r') {
+                line += c;
+                continue;
+            }
+            // The OpenGL driver of the screen reports its frames ("[ps5-gallium] ...", "[ps5-driver-cycles] ...") every
+            // second or so; that is not what the log is for.
+            if (line.empty() || line.compare(0, 5, "[ps5-") == 0) {
+                line.clear();
+                continue;
+            }
             {
+                std::string cur;
+                {
+                    std::lock_guard<std::mutex> lk(g_mg.mu);
+                    cur = g_mg.job;
+                }
+                std::snprintf(stamp, sizeof stamp, "[%7.1f] ", mg_now());
+                std::lock_guard<std::mutex> lk(g_wmu);
+                g_wq.emplace_back(std::move(cur), stamp + line + "\n");
+            }
+            {
+                // What the web interface shows: the stage line ("[3/7] ..."), the progress bar, the last lines.
                 std::lock_guard<std::mutex> lk(g_mg.mu);
-                cur = g_mg.job;
+                if (line.size() > 4 && line[0] == '[' && isdigit(static_cast<unsigned char>(line[1])) && line[2] == '/') {
+                    g_mg.stage = line;
+                    g_mg.progress.clear();
+                } else if (line.find("[flow] [") != std::string::npos) {
+                    g_mg.progress = line;
+                } else if (line.find("dit-fwd") == std::string::npos && line.find("trellis:dbg") == std::string::npos &&
+                           line.compare(0, 5, "radv/") != 0 && line.compare(0, 4, "[Sce") != 0) {
+                    g_mg.tail.push_back(line.substr(0, 200));
+                    if (g_mg.tail.size() > 200) g_mg.tail.erase(g_mg.tail.begin(), g_mg.tail.begin() + 100);
+                }
             }
-            if (cur != jobname) {
-                if (jobout) fclose(jobout);
-                jobname = cur;
-                jobout  = cur.empty() ? nullptr : fopen((std::string(kLogs) + "/" + cur + ".log").c_str(), "w");
-            }
-            if (jobout) {
-                std::fprintf(jobout, "[%7.1f] %s\n", mg_now(), line.c_str());
-                std::fflush(jobout);
-            }
+            line.clear();
         }
-        {
-            // What the web interface shows: the stage line ("[3/7] ..."), the progress bar, the last lines.
-            std::lock_guard<std::mutex> lk(g_mg.mu);
-            if (line.size() > 4 && line[0] == '[' && isdigit(static_cast<unsigned char>(line[1])) && line[2] == '/') {
-                g_mg.stage = line;
-                g_mg.progress.clear();
-            } else if (line.find("[flow] [") != std::string::npos) {
-                g_mg.progress = line;
-            } else if (line.find("dit-fwd") == std::string::npos && line.find("trellis:dbg") == std::string::npos &&
-                       line.compare(0, 5, "radv/") != 0 && line.compare(0, 4, "[Sce") != 0) {
-                g_mg.tail.push_back(line.substr(0, 200));
-                if (g_mg.tail.size() > 200) g_mg.tail.erase(g_mg.tail.begin(), g_mg.tail.begin() + 100);
-            }
-        }
-        line.clear();
     }
     return nullptr;
 }
@@ -419,8 +453,8 @@ void * run(void *) {
         const int rc = run_job(name, line);
         rename((base + ".running").c_str(), (base + (rc == 0 ? ".done" : ".failed")).c_str());
         // A second job in the same process runs 4 to 9 times slower (the GPU stages too), so the title starts
-        // over after every job; the queue is on disk and the next start picks it up.
-        g_restart = true;
+        // over after every job; the queue is on disk and the next start picks it up. Asked to quit during the job: no restart.
+        g_restart = stat(kQuit, &st) != 0;
         break;
     }
     std::printf("ps5mg: worker ends\n");
@@ -434,10 +468,18 @@ int main() {
     sceSystemServiceHideSplashScreen();
     mkdir(kDir, 0777);
     mkdir(kLogs, 0777);
+    // A quit file left by an earlier run (a crash, or one written while no title ran) would end this one at once.
+    unlink(kQuit);
     // Both in append mode: with "w" for one of them the two write at different offsets and garble each other's lines.
     { FILE * f = fopen(kRaw, "w"); if (f) fclose(f); }
-    freopen(kRaw, "a", stdout);
-    freopen(kRaw, "a", stderr);
+    int fds[2];
+    if (pipe(fds) == 0 && dup2(fds[1], 1) >= 0 && dup2(fds[1], 2) >= 0) {
+        close(fds[1]);
+        g_log_in = fds[0];
+    } else {
+        freopen(kRaw, "a", stdout);
+        freopen(kRaw, "a", stderr);
+    }
     pthread_t lt;
     pthread_create(&lt, nullptr, stamp_log, nullptr);
     // Whole lines to the file: unbuffered, the console's libc writes a character at a time and the two streams
@@ -445,7 +487,6 @@ int main() {
     setvbuf(stdout, nullptr, _IOFBF, 1 << 16);
     setvbuf(stderr, nullptr, _IOLBF, 1 << 12);
     setenv("radv_enable_unified_heap_on_apu", "true", 1);
-    setenv("TRELLIS_DBG_DEFORM", "1", 1);  // per-call timing of the deform conv in the log
     std::printf("ps5mg: start\n");
 #ifdef MG_SCREEN
     // The screen first: it takes from the same memory pool as the models.
@@ -474,7 +515,12 @@ int main() {
     // The screen (or, without one, a pause) until the title ends itself, which it does when asked (the quit file) or
     // after a job, and never in the middle of one.
     double next_pool = 0;
+    double next_out = 0;
     while (!g_done) {
+        if (g_log_in >= 0 && mg_now() >= next_out) {  // stdout is fully buffered; the log thread may not flush it (see stamp_log)
+            next_out = mg_now() + 0.1;
+            fflush(stdout);
+        }
         if (mg_now() >= next_pool) {
             next_pool = mg_now() + 1;
             int64_t       at   = 0;

@@ -451,7 +451,7 @@ void mg_web_run(int port) {
         }
         std::ostringstream a;
         a << img << ' ' << kMgOut << '/' << id << ".glb -m " << wdir << " --res " << res_px << " -s " << seed << " --steps "
-          << steps << " --fa-fast -v" << (xatlas ? " --xatlas" : " --box-uv") << (texture ? "" : " --no-texture");
+          << steps << " --fa-fast" << (xatlas ? " --xatlas" : " --box-uv") << (texture ? "" : " --no-texture");
         if (family == "pixal3d") a << " --model pixal3d";
         if (family == "pixal3d" && !fov.empty()) a << " --fov " << atof(fov.c_str());
         if (faces >= 1000) a << " --faces " << faces;

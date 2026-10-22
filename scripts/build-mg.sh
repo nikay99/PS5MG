@@ -51,6 +51,7 @@ sedi '/TRELLIS_KEEP_PLY/!s/^    trellis::write_ply(ply.c_str()/    if (!std::get
 sedi '/PS5MG_YUP_NATIVE/!{s/float p\[3\] = { ox, oz, -oy };/float p[3] = { ox, oz, -oy }; if (std::getenv("PS5MG_YUP_NATIVE")) { p[1] = oy; p[2] = oz; }/; s/float p\[3\]={ox,oz,-oy};/float p[3]={ox,oz,-oy}; if (std::getenv("PS5MG_YUP_NATIVE")) { p[1] = oy; p[2] = oz; }/}' "$T/src/mesh_glb.cpp"
 # BiRefNet's bilinear upscale: parallel, channel by channel (ps5/birefnet_interp.inc).
 python3 "$W/ps5/patch-trellis-io.py" "$T/src/trellis_model.cpp"
+python3 "$W/ps5/patch-notex-faces.py" "$T/src/trellis_cli.cpp"
 python3 "$W/ps5/patch-birefnet.py" "$T/src/birefnet.cpp" "$W/ps5/birefnet_interp.inc"
 # Big stdio buffers for the weights and the GLB: the console's libc reads and writes a file in buffer-sized pieces
 # (a few KB by default), which held the weight loading to about 90 MB/s.
