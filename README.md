@@ -19,6 +19,11 @@
 > (`tools/get-weights.sh` asks first). PS5MG is not affiliated with Sony, Microsoft or Meta, ships no exploit and asks for none.
 > Details: [Licences, plainly](#licences-plainly) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
+<p align="center">
+  <a href="docs/media/demo.mp4"><img src="docs/media/demo.gif" width="760" alt="A real run on a PS5: drop a picture, wait for the mesh, turn it around"></a><br>
+  <sub>A real run on a PS5. The wait is sped up (the job took 2:19 here). Click for the video.</sub>
+</p>
+
 Drop a picture in the web interface and get a game-ready GLB (150k faces, 1024 px texture) in one to three minutes, made
 entirely on the console's own GPU.
 
