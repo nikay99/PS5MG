@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PS5MG</title>
+<style>
+:root{--bg:#0e1118;--panel:#161b26;--panel2:#1d2433;--line:#2a3347;--fg:#e7ecf5;--mut:#8b97ad;--acc:#4f8cff;--ok:#3ecf8e;--bad:#ff6b6b;--warn:#f5b84b}
+@media (prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--panel2:#eef1f7;--line:#d7dce8;--fg:#121826;--mut:#5d6a82;--acc:#2a6af0}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+header h1{font-size:18px;margin:0}header small{color:var(--mut)}header .sp{flex:1}
+main{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:900px){main{grid-template-columns:380px 1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:0 0 10px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+select,input[type=number],input[type=text]{width:100%;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.drop{border:2px dashed var(--line);border-radius:12px;min-height:150px;display:grid;place-items:center;text-align:center;color:var(--mut);cursor:pointer;overflow:hidden}
+.drop.over{border-color:var(--acc);color:var(--fg)}.drop img{max-width:100%;max-height:260px;display:block}
+button{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:10px 14px;font-weight:600;cursor:pointer}
+button.sec{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}button:disabled{opacity:.5;cursor:default}
+.full{width:100%;margin-top:14px}
+.bar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:8px 0}.bar>i{display:block;height:100%;background:var(--acc);width:0;transition:width .4s}
+.kv{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--mut);font-size:13px}.kv b{color:var(--fg);font-weight:600}
+pre{background:var(--panel2);border-radius:8px;padding:8px;max-height:150px;overflow:auto;font-size:12px;margin:8px 0 0;white-space:pre-wrap}
+.jobs{display:grid;gap:10px}
+.job{display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center;background:var(--panel2);border-radius:10px;padding:8px}
+.job img{width:72px;height:72px;object-fit:cover;border-radius:8px;background:var(--panel)}
+.job .t{font-weight:600}.job .m{color:var(--mut);font-size:12px}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;background:var(--panel);border:1px solid var(--line);margin-right:4px}
+.s-done{color:var(--ok)}.s-failed{color:var(--bad)}.s-running{color:var(--warn)}.s-queued,.s-cancelled{color:var(--mut)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);padding:0;width:min(900px,96vw)}
+dialog::backdrop{background:#000a}.vh{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}.vh .sp{flex:1}
+#view{width:100%;height:min(70vh,640px);display:block;background:#202531}
+.hint{color:var(--mut);font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+<header><h1>PS5MG</h1><small>image &rarr; 3D mesh on the console</small><span class="sp"></span><small id="pool"></small></header>
+<main>
+<section>
+  <div class="card">
+    <h2>New mesh</h2>
+    <div class="drop" id="drop"><span id="droptxt">Drop an image here or click to choose<br><small>one object, plain background works best</small></span></div>
+    <input id="file" type="file" accept="image/*" hidden>
+    <div class="row">
+      <div><label for="family">Model</label><select id="family"><option value="trellis">TRELLIS.2</option><option value="pixal3d">Pixal3D</option></select></div>
+      <div><label for="weights">Weights</label><select id="weights"></select></div>
+    </div>
+    <div class="row">
+      <div><label for="res">Resolution</label><select id="res"><option>512</option><option>1024</option></select></div>
+      <div><label for="texture">Texture</label><select id="texture"><option value="on">on</option><option value="off">off (geometry only)</option></select></div>
+    </div>
+    <div class="row">
+      <div><label for="seed">Seed</label><input id="seed" type="number" value="42" min="0"></div>
+      <div><label for="steps">Steps</label><input id="steps" type="number" value="8" min="1" max="50"></div>
+    </div>
+    <div class="row">
+      <div><label for="faces">Face budget (0 = default)</label><input id="faces" type="number" value="0" min="0" step="1000"></div>
+      <div><label for="uv">UV unwrap</label><select id="uv"><option value="box">box (fast)</option><option value="xatlas">xatlas (clean)</option></select></div>
+    </div>
+    <label for="label">Name (optional)</label><input id="label" type="text" maxlength="60" placeholder="e.g. oil lantern">
+    <button class="full" id="go" disabled>Generate</button>
+    <div class="hint" id="msg"></div>
+  </div>
+</section>
+<section style="display:grid;gap:16px;align-content:start">
+  <div class="card">
+    <h2>Now</h2>
+    <div id="now" class="kv"><span>idle</span></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="kv" id="stage"></div>
+    <pre id="tail" hidden></pre>
+  </div>
+  <div class="card">
+    <h2>Meshes</h2>
+    <div class="jobs" id="jobs"><span class="hint">nothing yet</span></div>
+  </div>
+</section>
+</main>
+<dialog id="dlg">
+  <div class="vh"><b id="vt"></b><span class="sp"></span><label style="margin:0"><input type="checkbox" id="wire"> wireframe</label><a id="dl"><button class="sec" type="button">Download GLB</button></a><button class="sec" id="close">Close</button></div>
+  <canvas id="view"></canvas>
+</dialog>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const $=id=>document.getElementById(id);
+let file=null, models=[];
+const STAGES=7;
+
+// ---- form
+const drop=$('drop'), fin=$('file');
+function setFile(f){ if(!f||!f.type.startsWith('image/')) return; file=f; $('go').disabled=false;
+  const r=new FileReader(); r.onload=()=>{drop.innerHTML='<img src="'+r.result+'">'}; r.readAsDataURL(f); }
+drop.onclick=()=>fin.click(); fin.onchange=()=>setFile(fin.files[0]);
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')}; drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');setFile(e.dataTransfer.files[0])};
+addEventListener('paste',e=>{const f=[...e.clipboardData.files][0]; if(f) setFile(f)});
+function syncModels(){
+  const w=$('weights'), cur=w.value; w.innerHTML=models.map(m=>`<option value="${m.dir}">${m.dir}</option>`).join('');
+  if(cur) w.value=cur;
+  const m=models.find(m=>m.dir===w.value)||{};
+  $('family').querySelector('[value=pixal3d]').disabled=!m.pixal3d;
+  if(!m.pixal3d && $('family').value==='pixal3d') $('family').value='trellis';
+  $('res').querySelector('option:nth-child(2)').disabled=!m.res1024;
+  if(!m.res1024) $('res').value='512';
+}
+$('weights').onchange=syncModels;
+$('go').onclick=async()=>{
+  const fd=new FormData(); fd.append('image',file);
+  for(const k of ['family','weights','res','texture','seed','steps','faces','uv','label']) fd.append(k,$(k).value);
+  $('go').disabled=true; $('msg').textContent='sending...';
+  try{ const r=await fetch('/api/jobs',{method:'POST',body:fd}); const j=await r.json();
+    $('msg').textContent=r.ok?'queued '+j.id:(j.error||'error'); }catch(e){ $('msg').textContent=String(e); }
+  $('go').disabled=false; poll();
+};
+
+// ---- status
+const fmt=s=>{s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+async function poll(){
+  try{
+    const [st,jobs]=await Promise.all([fetch('/api/status').then(r=>r.json()),fetch('/api/jobs').then(r=>r.json())]);
+    $('pool').textContent=`memory ${st.pool_free_gib.toFixed(1)} / ${st.pool_gib.toFixed(1)} GiB free · ${st.threads} threads`;
+    const m=/^\[(\d)\/(\d)\]/.exec(st.stage||''); const n=m?+m[1]:0, tot=m?+m[2]:STAGES;
+    let pct=st.busy?Math.max(3,(n-1)/tot*100):0; const f=/(\d+)\/(\d+)/.exec(st.progress||''); if(f&&m) pct+= (+f[1]/+f[2])/tot*100;
+    $('bar').style.width=Math.min(100,pct)+'%';
+    $('now').innerHTML=st.busy?`<span>job <b>${st.job}</b></span><span>elapsed <b>${fmt(st.elapsed)}</b></span>`:'<span>idle</span>';
+    $('stage').innerHTML=st.busy?`<span><b>${(st.stage||'').replace(/^\[\d\/\d\]\s*/,'')||'starting'}</b></span><span>${(st.progress||'').trim().replace(/\s+/g,' ')}</span>`:'';
+    const tail=$('tail'); tail.hidden=!st.busy; tail.textContent=(st.tail||[]).join('\n'); tail.scrollTop=1e9;
+    renderJobs(jobs);
+  }catch(e){ $('now').innerHTML='<span class="s-failed">no connection</span>'; }
+}
+let showAll=false;
+function renderJobs(all){
+  const jobs=showAll?all:all.slice(0,25);
+  if(!all.length){ $('jobs').innerHTML='<span class="hint">nothing yet</span>'; return; }
+  $('jobs').innerHTML=jobs.map(j=>{
+    const m=j.meta||{}; const title=m.label||j.id;
+    const tags=m.family?`<span class="tag">${m.family}</span><span class="tag">${m.weights}</span><span class="tag">${m.res}</span><span class="tag">${m.texture?'textured':'geometry'}</span>`:'';
+    const img=j.image?`<img src="/api/jobs/${j.id}/image" loading="lazy">`:'<img alt="">';
+    const act=j.status==='done'&&j.glb_bytes?`<button data-v="${j.id}" data-t="${title.replace(/"/g,'')}">View</button>`:
+              j.status==='queued'?`<button class="sec" data-c="${j.id}">Cancel</button>`:'';
+    return `<div class="job">${img}<div><div class="t">${title}</div><div class="m"><span class="s-${j.status}">${j.status}</span>${j.secs?' · '+fmt(j.secs):''}${j.glb_bytes?' · '+(j.glb_bytes/1048576).toFixed(1)+' MB':''}</div><div class="m">${tags}</div></div><div>${act}</div></div>`}).join('')+(all.length>25?`<button class="sec" id="more">${showAll?'Show fewer':'Show all '+all.length}</button>`:'');
+}
+$('jobs').onclick=async e=>{
+  if(e.target.id==='more'){ showAll=!showAll; poll(); return; }
+  const v=e.target.dataset.v, c=e.target.dataset.c;
+  if(v) openViewer(v,e.target.dataset.t); if(c){ await fetch(`/api/jobs/${c}/cancel`,{method:'POST'}); poll(); }
+};
+
+// ---- viewer
+let renderer,scene,camera,controls,obj,raf;
+async function openViewer(id,title){
+  $('vt').textContent=title; $('dl').href=`/api/jobs/${id}/glb`; $('dlg').showModal();
+  if(!renderer){
+    renderer=new THREE.WebGLRenderer({canvas:$('view'),antialias:true}); scene=new THREE.Scene(); scene.background=new THREE.Color(0x202531);
+    camera=new THREE.PerspectiveCamera(40,1,0.01,100); controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true;
+    scene.add(new THREE.HemisphereLight(0xffffff,0x445066,1.6)); const d=new THREE.DirectionalLight(0xffffff,2.2); d.position.set(2,3,2); scene.add(d);
+  }
+  if(obj){scene.remove(obj);obj=null}
+  const size=()=>{const c=$('view'); renderer.setSize(c.clientWidth,c.clientHeight,false); camera.aspect=c.clientWidth/c.clientHeight; camera.updateProjectionMatrix()}; size();
+  $('vt').textContent=title+' (loading...)';
+  new GLTFLoader().load(`/api/jobs/${id}/glb`,g=>{
+    obj=g.scene; const b=new THREE.Box3().setFromObject(obj), c=b.getCenter(new THREE.Vector3()), s=b.getSize(new THREE.Vector3()).length();
+    obj.position.sub(c); scene.add(obj); camera.position.set(s*.7,s*.4,s*.9); controls.target.set(0,0,0); controls.update();
+    obj.traverse(o=>{ if(o.material&&!o.material.map&&!o.geometry.attributes.color) o.material.color=new THREE.Color(0xb9c2d3) });
+    $('vt').textContent=title; cancelAnimationFrame(raf); const loop=()=>{raf=requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}; loop();
+  },undefined,()=>{$('vt').textContent=title+' (could not load)'});
+}
+$('wire').onchange=()=>obj&&obj.traverse(o=>{if(o.material)o.material.wireframe=$('wire').checked});
+$('close').onclick=()=>{$('dlg').close();cancelAnimationFrame(raf)};
+$('dlg').addEventListener('close',()=>cancelAnimationFrame(raf));
+
+fetch('/api/models').then(r=>r.json()).then(m=>{models=m;syncModels()});
+poll(); setInterval(poll,2500);
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# weights, pictures and results stay out of the repository
+models/
+ps5-models/
+samples/
+compare/
+out/
+build/
+build-ps5/
+.deps/
+src/
+# local dev helpers (not for others): report builder, night-run scripts, the old PC trials, browser for screenshots
+tools/__pycache__/
+tools/.uitest/
+tools/trellis-vulkan-win/
+tools/report_*
+tools/keep-alive.sh
+tools/when-up.sh
+tools/ui-shot.py
+tools/shot-local.py
+tools/matte.py
+tools/mg-build.sh
+tools/docker-*.sh
+tools/put-zimage.sh
+tools/get-zimage.sh
+tools/text-to-3d*.sh
+tools/*triposr*
+tools/run-trellis.sh
+tools/fix-triposr.sh
+tools/check-ggml-patches.sh
+tools/README.trellis.md
+tools/jobs-round*.txt
+tools/test-deform/*.o
+tools/test-deform/t
+tools/test-decimate/*.o
+tools/test-decimate/t
+tools/test-decimate/fast.bin
