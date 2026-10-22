@@ -44,6 +44,28 @@ Pixal3D at 512 writes a raw, geometry-only mesh in 1:25 to 2:00 (raw winding: dr
 
 The picture with the three results side by side is `docs/images/presets.jpg` (`tools/make-presets-compare.py`).
 
+## Soak test: many jobs in a row (37 of 80, stopped by hand)
+
+`tools/jobs-soak.txt`: short jobs (4 steps, no texture, 20k faces) one after the other through `tools/run-queue.sh`. The title restarts itself
+after every job, so this is also a test of 37 restarts. It was stopped at job 37 so that the app could be reinstalled on the console.
+
+- **Result: every one of the 37 jobs finished.** No job failed, the title came back after each restart.
+- **But the console gets slower, and stays slower:**
+
+| jobs | median | slowest |
+|---|---|---|
+| 1 to 16 | 58 s | 88 s |
+| 17 to 24 | 148 s | 185 s |
+| 25 to 32 | 147 s | 172 s |
+| 33 to 37 | 166 s | 172 s |
+
+From job 17 on, the same short job takes about 2.6 times as long and it did not recover over the next 20 jobs. The first night showed the same
+pattern (CPU stages 2.5 times slower after hours of jobs, cured by restarting the console).
+
+**What is not known:** the cause. Candidates: heat (the console throttles), the system's own memory ("Internal Memory is running out" is in every job's log),
+or something that builds up with every self-restart. This test cannot tell them apart. Next steps for 0.3.0: run the same list right after a console restart and
+log the temperature; pause for ten minutes at the slow point and see whether it recovers; compare with a run that does not restart the title.
+
 ## Where the time goes (lantern)
 
 The first run on the console, with trellis.cpp unchanged, took 19:51 and had no texture; freeing the picture's

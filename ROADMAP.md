@@ -19,7 +19,9 @@ accounts, no weights hosted here. Every item below should be something you can s
 - The page shows which model files are missing and where they go, instead of only an error.
 
 ## 0.3.0: rock solid
-- A soak test of many jobs in a row (the list is `tools/jobs-soak.txt`), to prove the title's restart after every job holds up.
+- The soak test (`tools/jobs-soak.txt`) showed that the restart after every job holds up (37 of 37 jobs finished) but that jobs get about 2.6 times slower
+  from job 17 on and stay slow. Find out why: heat, system memory, or the restarts (see `docs/RESULTS.md`).
+- A stale `quit` file makes a freshly started title end at once: remove it at start.
 - Find why a second job in the same process runs slower, so the restart can go.
 - Pixal3D with texture at 1024 for large objects (it stops without an error message on the sword and shield pictures).
 - Cancel a running job; clearer error messages in the page.
