@@ -2,17 +2,43 @@
 
 # PS5MG - 3D Mesh Generation on PS5
 
-**Picture to textured 3D mesh, on the PlayStation 5.** Drop a picture in the web interface, get a game-ready GLB
-(150k faces, 1024 px texture) in one to three minutes, made entirely on the console's own GPU.
+<p align="center">
+  <b>Your PS5 turns a picture into a textured 3D mesh, on its own GPU.</b><br>
+  TRELLIS.2 with a web interface and a TV dashboard. Game assets and figurines from one picture.
+</p>
+
+<p align="center">
+  <b><a href="https://github.com/nikay99/PS5MG/releases/latest">Get the app</a></b> |
+  <a href="https://nikay99.github.io/PS5MG/">Gallery</a> |
+  <a href="#quick-start">Quick start</a> |
+  <a href="https://github.com/nikay99/PS5MG/issues">Issues</a>
+</p>
 
 > **Legal notice, short.** PS5MG contains no model weights and downloads nothing: the title has no network client, only a web
 > server for your own network. You fetch the weights yourself from their authors, after accepting their licences
 > (`tools/get-weights.sh` asks first). PS5MG is not affiliated with Sony, Microsoft or Meta, ships no exploit and asks for none.
 > Details: [Licences, plainly](#licences-plainly) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
+Drop a picture in the web interface and get a game-ready GLB (150k faces, 1024 px texture) in one to three minutes, made
+entirely on the console's own GPU.
+
 PS5MG is the third title in the line of [PS5LM](https://github.com/cobanov/PS5LM) (language models) and
 [PS5SD](https://github.com/Darkatek7/PS5SD) (Stable Diffusion): same toolchain, same screen, same install.
 Title id `PPSA99577`.
+
+## Who is it for
+
+- 3D-printing hobbyists who want a figurine from a picture.
+- Game developers and jam participants who need quick assets (GLB opens in Blender, Godot, Unity and Unreal).
+- Tinkerers who like that all of this runs on a game console.
+
+## Why it is fun
+
+- A mesh in about one to three minutes on the console (1:08 to 2:22 for the five objects in [How fast](#how-fast)).
+- No PC needed while it runs: the console does the work, any browser on your network is the remote.
+- Meshes without holes, with a texture or as plain geometry. For printing, let your slicer's repair check them (see Examples).
+- STL and OBJ downloads for printing (the mesh stands on the plate, scaled to the size you give), quality presets, several
+  pictures at once, and a picker for the pictures PS5SD made on the same console.
 
 | web interface (desktop) | on a phone |
 |---|---|
@@ -26,9 +52,11 @@ Title id `PPSA99577`.
 
 ## What you get
 
-- **Web interface** on port 7870: upload a picture, choose model, weights, resolution, texture, steps; a queue with live
-  stage and progress; finished meshes in a 3D viewer (three.js from a CDN, so the browser needs internet) and the GLB download.
-- **A REST API** for scripts ([docs/API.md](docs/API.md)).
+- **Web interface** on port 7870: drop one picture or several, or pick one PS5SD made; choose a quality preset (or the model, weights,
+  resolution, texture, steps and more under More options); a queue with live stage and progress; finished meshes in a 3D viewer
+  (three.js from a CDN, so the browser needs internet) with GLB, STL and OBJ downloads.
+- **A REST API** for scripts: the page's **API** button shows ready-made `curl` calls for your console (with a copy button and a
+  hint whether it is protected by a key); the full list is in [docs/API.md](docs/API.md).
 - **The PS5 screen:** PS5SD's dashboard (state, QR code of the web address, running job with its picture, time left,
   memory, log).
 - **Two model families:** [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) (textured meshes, the default) and
@@ -38,6 +66,8 @@ Title id `PPSA99577`.
 ![a picture and the textured mesh PS5MG made from it on the console](docs/images/hero.jpg)
 
 ## Examples
+
+**[Turn them around in the gallery](https://nikay99.github.io/PS5MG/)**: ten of these, as meshes you can rotate in the browser.
 
 Every picture below was drawn on the console too: PS5SD running Z-Image Turbo (about 85 s each), then PS5MG (1:44 to 4:04 per
 mesh, 150k faces, 1024 px texture). The renders are the GLB files as they come out, lit in three.js (`tools/render-glb.py`).
@@ -88,13 +118,36 @@ More numbers and the variant study (steps, q8, atlas size, face budget, seeds, P
 
 ## Quick start
 
-1. **Build:** every push builds the title in GitHub Actions. Fork, push, download the artifact
-   (`gh run download <id> -n ps5mg-title`), or build with Docker: [docs/BUILDING.md](docs/BUILDING.md).
-2. **Install** on a jailbroken console: copy `PPSA99577/` to `/data/homebrew/` over FTP and rescan in ShadowMountPlus.
-3. **Weights:** `tools/get-weights.sh` (about 6.5 GB, q4) on a PC: it shows the licences of the weights and downloads only after you
-   type `yes` (or pass `--accept-licenses`). Then `PS5_HOST=<console> tools/put-weights.sh`.
+### Requirements
+
+- A console that can run homebrew titles with ShadowMountPlus. Which exploit and firmware you need is outside this project, as with PS5SD and PS5LM.
+- An FTP server on the console, reachable on port 2121.
+- elfldr listening on port 9021 (only needed for the launch payload, `tools/mg.sh launch`).
+- A PC or phone on the same network.
+- About 7 GB free on the console for the q4 weights (the download is about 6.5 GB).
+- A modern browser (the viewer loads three.js from a CDN, so the browser needs internet).
+
+### First mesh in 10 minutes
+
+1. Download the zip from the [latest release](https://github.com/nikay99/PS5MG/releases/latest) and unpack it. (Or build it
+   yourself: [docs/BUILDING.md](docs/BUILDING.md).)
+2. Copy the folder `PPSA99577/` to `/data/homebrew` on the console over FTP (port 2121).
+3. In ShadowMountPlus, rescan. The title PS5MG appears on the home screen.
+4. On a PC, in a clone of this repository, run `tools/get-weights.sh`. It shows the licences of the weights and downloads
+   (about 6.5 GB, q4) only after you type `yes` (or pass `--accept-licenses`).
+5. Send them to the console: `PS5_HOST=<console> tools/put-weights.sh` (they land in `/data/PS5MG/models/q4`).
    Optional: `tools/get-more-weights.sh` for q8 and Pixal3D.
-4. Start the title and open `http://<console>:7870`.
+6. Start the title from its icon (or `PS5_HOST=<console> tools/mg.sh launch`).
+7. Open `http://<console>:7870` in a browser and drop a picture.
+
+Build from source instead of using the release: [docs/BUILDING.md](docs/BUILDING.md) (GitHub Actions or Docker).
+
+### If something does not work
+
+- **The title is not on the home screen:** rescan in ShadowMountPlus, and check that `PPSA99577/` is directly inside `/data/homebrew`.
+- **The page does not open:** check that the title is running and that you use port 7870 and the console's address.
+- **"No model weights":** copy them with `tools/put-weights.sh` (step 5).
+- **A job failed:** click "Why?" in the page; it shows the log lines. `PS5_HOST=<console> tools/mg.sh log` prints the whole log.
 
 Picture rules for good meshes: one object, three-quarter view, plain light background, no stand, no shadow.
 Glass and flames get lost in the mesh; that is the model, not the console.

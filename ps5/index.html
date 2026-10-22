@@ -58,7 +58,9 @@ header .sp{flex:1}
 @keyframes pulse{50%{opacity:.35}}
 
 main{max-width:1080px;margin:0 auto;padding:1.25rem max(1rem,env(safe-area-inset-right)) 3rem max(1rem,env(safe-area-inset-left));display:grid;gap:1.5rem;grid-template-columns:minmax(0,1fr)}
-@media(min-width:900px){main{grid-template-columns:380px minmax(0,1fr);align-items:start}.make{position:sticky;top:5rem}}
+@media(min-width:900px){main{grid-template-columns:380px minmax(0,1fr);align-items:start}
+  /* pinned while the list on the right scrolls, but never taller than the window: it scrolls inside, so More options can be reached */
+  .make{position:sticky;top:4.6rem;max-height:calc(100dvh - 5.6rem);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;margin:0 -.5rem;padding:0 .5rem 1rem}}
 .large-title{font:700 2rem/1.1 var(--display);letter-spacing:-.03em;margin:.25rem 0 .9rem}
 .cap{font-size:.8125rem;font-weight:400;color:var(--label2);letter-spacing:0;margin:0 .25rem .45rem;text-transform:none}
 
@@ -158,6 +160,17 @@ dialog.in::backdrop{opacity:1}
 #view{width:100%;height:min(68vh,40rem);display:block;background:radial-gradient(120% 90% at 50% 40%,var(--grouped2),var(--stage));touch-action:none}
 .vf{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 1rem calc(.8rem + env(safe-area-inset-bottom));color:var(--label2);font-size:.8125rem;align-items:center}
 
+/* The API sheet */
+.hbtn{background:var(--fill2);border:0;color:var(--label2);font:600 .8125rem var(--font);padding:.28rem .75rem;border-radius:99px;cursor:pointer;transition:transform .35s var(--spring),color .2s}
+.hbtn:hover{color:var(--label)}.hbtn:active{transform:scale(.95);transition-duration:.08s}
+.apibody{padding:.2rem 1rem 1rem;max-height:min(64vh,36rem);overflow:auto}
+.apibody h3{font:600 .9375rem var(--display);letter-spacing:-.015em;margin:1rem 0 .35rem}
+.apibody p{color:var(--label2);font-size:.875rem;line-height:1.45}
+.apibody a{color:var(--tint)}
+.code{position:relative;background:var(--fill2);border-radius:12px;padding:.6rem 3.4rem .6rem .8rem;font:.76rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:var(--label);letter-spacing:0}
+.code .copy{position:absolute;top:.4rem;right:.4rem;border:0;background:var(--grouped);color:var(--tint);font:600 .75rem var(--font);padding:.2rem .55rem;border-radius:8px;cursor:pointer}
+.keyinfo{border-radius:12px;padding:.6rem .8rem;font-size:.875rem;margin-top:.2rem;background:var(--fill2);color:var(--label)}
+.keyinfo.on{background:color-mix(in srgb,var(--warn) 16%,transparent)}
 /* Pictures: several at once, and the link to PS5SD's */
 .thumbs{display:grid;gap:.4rem;width:100%;max-width:20rem;margin:0 auto}
 .thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block;animation:rise var(--t) var(--spring)}
@@ -197,7 +210,7 @@ dialog.in::backdrop{opacity:1}
 <header>
   <img class="logo" alt="" width="30" height="30" src="data:image/png;base64,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">
   <div><h1>PS5MG</h1></div><span class="sub">3D Mesh Generation on PS5</span>
-  <span class="sp"></span><span class="pill" id="pill"><i></i><em id="pilltxt" style="font-style:normal">Connecting</em></span>
+  <span class="sp"></span><button class="hbtn" id="apibtn" type="button">API</button><span class="pill" id="pill"><i></i><em id="pilltxt" style="font-style:normal">Connecting</em></span>
 </header>
 <main>
 <section class="group lock" id="lock" hidden>
@@ -275,6 +288,11 @@ dialog.in::backdrop{opacity:1}
   <div class="vh" id="ph"><b id="pt">Pictures from PS5SD</b><button class="btn sec sm" id="pclose" type="button">Done</button></div>
   <div class="pgrid" id="pgrid"></div>
   <div class="vf"><span id="pmsg"></span></div>
+</dialog>
+
+<dialog id="apidlg" aria-labelledby="at">
+  <div class="vh" id="ah"><b id="at">API for scripts</b><button class="btn sec sm" id="aclose" type="button">Done</button></div>
+  <div class="apibody" id="apibody"></div>
 </dialog>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -417,7 +435,7 @@ $('jobs').onclick=async e=>{
 };
 
 // ---- sheets: the viewer and the picture picker grow out of the button that opened them and go back where they came from
-const dlg=$('dlg'), pick=$('pick'), vh=$('vh');
+const dlg=$('dlg'), pick=$('pick'), apidlg=$('apidlg'), vh=$('vh');
 let renderer,scene,camera,controls,obj,raf;
 const project=(v,d=.998)=>(v/1000)*d/(1-d);                 // where a flick would come to rest (px)
 const rubber=(o,dim,c=.55)=>(o*dim*c)/(dim+c*Math.abs(o));   // resistance that grows with the overshoot
@@ -433,7 +451,7 @@ function closeSheet(d,vy=0){
   if(vy>0){ d.style.transition='transform .4s var(--spring),opacity .3s'; d.style.transform=`translateY(${innerHeight}px)`; }   // down the way it was dragged
   setTimeout(()=>{ if(d.open) d.close(); }, reduce.matches?220:vy>0?330:380);
 }
-for(const d of [dlg,pick]){
+for(const d of [dlg,pick,apidlg]){
   d.addEventListener('close',()=>{ if(d===dlg) cancelAnimationFrame(raf); d.classList.remove('in'); d.style.transform=''; d.style.transition=''; });
   d.addEventListener('cancel',e=>{ e.preventDefault(); closeSheet(d); });
   d.addEventListener('click',e=>{ if(e.target===d) closeSheet(d); });            // the dimmed area
@@ -449,7 +467,7 @@ function dragSheet(d,handle){
     if(dy+project(v)>d.offsetHeight*.45){ closeSheet(d,Math.max(v,1)); } else { d.style.transform=''; } };
   handle.addEventListener('pointerup',end); handle.addEventListener('pointercancel',end);
 }
-dragSheet(dlg,vh); dragSheet(pick,$('ph'));
+dragSheet(dlg,vh); dragSheet(pick,$('ph')); dragSheet(apidlg,$('ah'));
 
 // ---- the viewer
 function openViewer(id,title,from){
@@ -500,6 +518,34 @@ async function openPicker(){
 }
 $('pgrid').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; picks=[{ps5sd:b.dataset.n}]; showPicks(); closeSheet(pick); };
 $('pickbtn').onclick=openPicker; $('pclose').onclick=()=>closeSheet(pick);
+
+// ---- the API, for this console: ready-made calls to copy
+const DOCS='https://github.com/nikay99/PS5MG/blob/main/docs/API.md';
+async function openApi(from){
+  let auth={required:false};
+  try{ auth=await (await fetch('/api/auth')).json(); }catch(_){}
+  const o=location.origin, H=auth.required?' -H "Authorization: Bearer YOUR_KEY"':'';
+  const calls=[
+    ['Make a mesh from a picture',`curl${H} -F image=@picture.png -F steps=8 ${o}/api/jobs`],
+    ['Use a picture PS5SD made',`curl${H} -F from_ps5sd=PICTURE_NAME.png ${o}/api/jobs`],
+    ['See the queue',`curl${H} ${o}/api/jobs`],
+    ['Is it busy?',`curl${H} ${o}/api/status`],
+    ['Download a mesh',`curl${H} -o mesh.glb ${o}/api/jobs/JOB_ID/glb`],
+    ['Why did a job fail?',`curl${H} ${o}/api/jobs/JOB_ID/log`]];
+  $('apibody').innerHTML=
+    `<p>Everything this page does, a script can do. Base address: <b>${esc(o)}</b></p>`+
+    `<div class="keyinfo${auth.required?' on':''}">${auth.required?'This console is <b>protected</b>: send the key as <b>Authorization: Bearer</b> (the examples below do). The key is the line in <b>/data/PS5MG/api-key.txt</b>.':'This console is <b>open</b>: anyone on your network can use it. To protect it, run <b>tools/mg.sh setkey YOUR_KEY</b> from the repository.'}</div>`+
+    calls.map(c=>`<h3>${esc(c[0])}</h3><div class="code"><span>${esc(c[1])}</span><button class="copy" type="button">Copy</button></div>`).join('')+
+    `<h3>All routes and settings</h3><p>Quality, model, weights, resolution, seed, steps, face budget and texture size are form fields of <b>POST /api/jobs</b>. The full list is in the <a href="${DOCS}" target="_blank" rel="noopener">API documentation</a>.</p>`;
+  openSheet(apidlg,from);
+}
+$('apibtn').onclick=e=>openApi(e.currentTarget);
+$('aclose').onclick=()=>closeSheet(apidlg);
+$('apibody').onclick=async e=>{ const b=e.target.closest('.copy'); if(!b) return;
+  const text=b.parentElement.querySelector('span').textContent;
+  try{ await navigator.clipboard.writeText(text); }
+  catch(_){ const r=document.createRange(); r.selectNodeContents(b.parentElement.querySelector('span')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  b.textContent='Copied'; setTimeout(()=>{ b.textContent='Copy'; },1400); };
 
 function start(){
   api('/api/models').then(r=>r.json()).then(m=>{models=m;syncModels()}).catch(()=>{});
