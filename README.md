@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/logo.png" width="160" alt="PS5MG logo"></p>
+
 # PS5MG - 3D Mesh Generation on PS5
 
 **Picture to textured 3D mesh, on the PlayStation 5.** Drop a picture in the web interface, get a game-ready GLB

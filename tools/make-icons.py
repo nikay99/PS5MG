@@ -1,5 +1,5 @@
 """Makes sce_sys/icon0.png, icon0.dds, pic0.dds, pic1.dds for the title (own artwork, no PS5SD placeholders).
-usage: python make-icons.py <transparent-render.png>      (tools/render-glb.py <glb> out.png alpha single)
+usage: python make-icons.py docs/images/icon-art.jpg   (the artwork: drawn on the console by PS5SD with Z-Image Turbo)
 The DDS files are BC7 (mode 6 only, a small encoder here): same header layout as PS5SD's, 4:1 smaller than RGBA."""
 import os, struct, sys
 import numpy as np
@@ -7,8 +7,6 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 here = os.path.dirname(os.path.abspath(__file__))
 out = os.path.join(os.path.dirname(here), "sce_sys")
-obj = Image.open(sys.argv[1]).convert("RGBA")
-bbox = obj.getbbox(); obj = obj.crop(bbox)
 
 def font(size, bold=True):
     for f in (r"C:\Windows\Fonts\segoeuib.ttf", r"C:\Windows\Fonts\arialbd.ttf", "DejaVuSans-Bold.ttf"):
@@ -16,55 +14,32 @@ def font(size, bold=True):
         except OSError: pass
     return ImageFont.load_default()
 
-def gradient(w, h, top, bottom, glow=(0.7, 0.45), glow_rgb=(40, 120, 150)):
-    y = np.linspace(0, 1, h)[:, None, None]
-    img = np.array(top)[None, None, :] * (1 - y) + np.array(bottom)[None, None, :] * y
-    img = np.broadcast_to(img, (h, w, 3)).copy()
-    yy, xx = np.mgrid[0:h, 0:w]
-    d = np.hypot((xx / w - glow[0]) * w / max(w, h), (yy / h - glow[1]) * h / max(w, h))
-    g = np.clip(1 - d / 0.55, 0, 1) ** 2
-    img += g[:, :, None] * (np.array(glow_rgb)[None, None, :] * 0.8)
-    return Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).convert("RGBA")
+# ---- the artwork: a square picture (made on the console with PS5SD + Z-Image Turbo, samples/icons/dragon.png)
+art = Image.open(sys.argv[1]).convert("RGB")
+if art.width != art.height: art = art.crop((0, 0, min(art.size), min(art.size)))
+edge = np.asarray(art.resize((64, 64)), float)
+bgc = tuple(int(v) for v in np.concatenate([edge[0], edge[-1], edge[:, 0], edge[:, -1]]).mean(0))  # the picture's own background
 
-def place(base, im, height, cx, cy, shadow=True):
-    w = int(im.width * height / im.height)
-    im = im.resize((w, height), Image.LANCZOS)
-    if shadow:
-        sh = Image.new("RGBA", base.size, (0, 0, 0, 0))
-        a = im.getchannel("A").point(lambda v: int(v * 0.55))
-        sh.paste((0, 0, 0, 255), (cx - w // 2 + height // 40, cy - height // 2 + height // 30), a)
-        base.alpha_composite(sh.filter(ImageFilter.GaussianBlur(height // 30)))
-    base.alpha_composite(im, (cx - w // 2, cy - height // 2))
-
-def wire(base, step, alpha):  # a faint mesh grid, the way a mesh looks
-    d = ImageDraw.Draw(base, "RGBA")
-    w, h = base.size
-    for x in range(-h, w, step):
-        d.line([(x, h), (x + h, 0)], fill=(120, 200, 230, alpha), width=max(1, step // 60))
-    for x in range(0, w + h, step):
-        d.line([(x, h), (x - h, 0)], fill=(120, 200, 230, alpha), width=max(1, step // 60))
-
-TOP, BOT = (14, 24, 40), (26, 52, 74)
-# icon: the lantern and the name
-icon = gradient(512, 512, TOP, BOT, glow=(0.5, 0.42), glow_rgb=(50, 140, 165))
-place(icon, obj, 380, 256, 226)
-d = ImageDraw.Draw(icon)
-t = "PS5MG"; f = font(64)
-tw = d.textlength(t, font=f)
-d.text(((512 - tw) / 2, 410), t, font=f, fill=(238, 244, 248, 255))
+icon = art.resize((512, 512), Image.LANCZOS).convert("RGBA")
 icon.convert("RGB").save(os.path.join(out, "icon0.png"))
 
-# pic0: the title's background (text left, object right); pic1: the same without text, darker
 def wall(text):
     w, h = 3840, 2160
-    im = gradient(w, h, TOP, BOT, glow=(0.72, 0.5), glow_rgb=(45, 130, 160))
-    wire(im, 240, 5)
-    place(im, obj, 1500, 2780, 1080)
+    base = np.zeros((h, w, 3), float) + np.array(bgc)
+    yy, xx = np.mgrid[0:h, 0:w]
+    d = np.hypot((xx - w * 0.70) / w, (yy - h * 0.5) / w)
+    base += (np.clip(1 - d / 0.42, 0, 1) ** 2)[:, :, None] * np.array([10, 40, 50])  # a soft glow behind the art
+    im = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8)).convert("RGBA")
+    size = 2000
+    pic = art.resize((size, size), Image.LANCZOS).convert("RGBA")
+    m = np.hypot(*(np.mgrid[0:size, 0:size] - size / 2)) / (size / 2)
+    pic.putalpha(Image.fromarray((np.clip((1 - m) / 0.35, 0, 1) * 255).astype(np.uint8)))  # fade the square's edges into the wall
+    im.alpha_composite(pic, (int(w * 0.70 - size / 2), h // 2 - size // 2))
     if text:
-        d = ImageDraw.Draw(im)
-        d.text((330, 800), "PS5MG", font=font(300), fill=(238, 244, 248, 255))
-        d.text((340, 1150), "3D Mesh Generation on PS5", font=font(110, False), fill=(150, 205, 225, 255))
-        d.text((340, 1330), "picture to textured mesh, on the console's own GPU", font=font(70, False), fill=(120, 160, 180, 255))
+        d2 = ImageDraw.Draw(im)
+        d2.text((330, 800), "PS5MG", font=font(300), fill=(238, 244, 248, 255))
+        d2.text((340, 1150), "3D Mesh Generation on PS5", font=font(110, False), fill=(150, 205, 225, 255))
+        d2.text((340, 1330), "picture to textured mesh, on the console's own GPU", font=font(70, False), fill=(120, 160, 180, 255))
     else:
         im = Image.blend(im, Image.new("RGBA", im.size, (8, 14, 24, 255)), 0.35)
     return im
