@@ -1,0 +1,39 @@
+name: Bug report
+description: Something did not work.
+labels: [bug]
+body:
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log lines
+      description: The lines the page shows when you click "Why?" on a failed job, or the output of `PS5_HOST=<console> tools/mg.sh log`.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: PS5MG version
+      placeholder: v0.1.1
+    validations:
+      required: true
+  - type: input
+    id: console
+    attributes:
+      label: Console model
+      placeholder: Disc or Digital, original or Slim or Pro
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Model, weights, resolution and settings you used, and the kind of picture.

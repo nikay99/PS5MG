@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest something PS5MG could do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: What is it for
+    validations:
+      required: true
+  - type: textarea
+    id: use
+    attributes:
+      label: How you would use it
+      description: PS5MG stays small: no cloud, no accounts, no hosted weights. See ROADMAP.md.

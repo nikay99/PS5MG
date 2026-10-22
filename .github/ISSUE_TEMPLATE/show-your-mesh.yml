@@ -1,0 +1,28 @@
+name: Show your mesh
+description: Share a mesh you made on the console.
+labels: [show-your-mesh]
+body:
+  - type: textarea
+    id: picture
+    attributes:
+      label: The picture
+      description: Drop the input picture here, or say where it came from. You need the rights to it.
+    validations:
+      required: true
+  - type: input
+    id: settings
+    attributes:
+      label: Model and settings
+      placeholder: TRELLIS.2 q4, resolution 512, 8 steps, 150k faces, 1024 px texture
+    validations:
+      required: true
+  - type: input
+    id: time
+    attributes:
+      label: Time it took
+      placeholder: 1:53
+  - type: textarea
+    id: result
+    attributes:
+      label: Your mesh
+      description: A screenshot of the viewer or a render, or a link to the GLB. Optional.
