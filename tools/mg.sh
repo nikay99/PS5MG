@@ -8,6 +8,7 @@
 #   mg.sh alive                                    title running? (log changed in the last 3 minutes and no 'worker ends')
 #   mg.sh launch                                   start the title (launch payload for PPSA99577)
 #   mg.sh quit                                     ask the title to end itself
+#   mg.sh setkey <key>                             protect the web interface and API with a key (empty: open again)
 set -u
 H=${PS5_HOST:?set PS5_HOST to the console address}
 F=ftp://$H:2121/data/PS5MG
@@ -36,5 +37,6 @@ case ${1:-} in
     echo "$log" | grep -q "worker ends" && echo "ENDED" || echo "no end marker" ;;
   launch) PS5_HOST=$H PS5_PORT=9021 bash "$here/third_party/PS5SD/scripts/send-elf.sh" "${MG_LAUNCH_ELF:-$here/build/tools/launch-mg.elf}" ;;
   quit) : > /tmp/mg-quit; curl -sS -T /tmp/mg-quit "$F/quit" && echo "quit sent" ;;
-  *) sed -n 2,11p "$0" ;;
+  setkey) echo "${2:-}" > /tmp/mg-key; curl -sS --ftp-create-dirs -T /tmp/mg-key "$F/api-key.txt" && echo "key set; the title reads it on every request" ;;
+  *) sed -n 2,12p "$0" ;;
 esac

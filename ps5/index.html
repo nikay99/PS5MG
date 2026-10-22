@@ -158,6 +158,14 @@ dialog.in::backdrop{opacity:1}
 #view{width:100%;height:min(68vh,40rem);display:block;background:radial-gradient(120% 90% at 50% 40%,var(--grouped2),var(--stage));touch-action:none}
 .vf{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 1rem calc(.8rem + env(safe-area-inset-bottom));color:var(--label2);font-size:.8125rem;align-items:center}
 
+/* Lock and failure details */
+.lock{grid-column:1/-1;max-width:26rem;margin:2rem auto;text-align:center;padding:1.6rem 1.4rem}
+.lock h2{font:700 1.5rem/1.15 var(--display);letter-spacing:-.025em;margin-bottom:.35rem}
+.lock p{color:var(--label2);font-size:.9375rem;margin-bottom:1rem}
+.lock input{width:100%;background:var(--fill2);border:0;border-radius:var(--r-ctl);padding:.75rem .9rem;color:var(--label);font:inherit;text-align:center;letter-spacing:.02em}
+.lock .btn{width:100%;margin-top:.7rem}
+.why{grid-column:1/-1;margin:.1rem 0 .1rem;white-space:pre-wrap;font:.75rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--label2);background:var(--fill2);border-radius:12px;padding:.6rem .75rem;animation:rise var(--t) var(--spring)}
+.job{grid-template-columns:56px minmax(0,1fr) auto}
 /* Reduced motion: the same feedback, without anything travelling. */
 @media(max-width:520px){header .sub{display:none}}
 @media (prefers-reduced-motion:reduce){
@@ -176,7 +184,13 @@ dialog.in::backdrop{opacity:1}
   <span class="sp"></span><span class="pill" id="pill"><i></i><em id="pilltxt" style="font-style:normal">Connecting</em></span>
 </header>
 <main>
-<section class="make">
+<section class="group lock" id="lock" hidden>
+  <h2>This console is protected</h2>
+  <p>Enter the key from <b>api-key.txt</b> on the console to continue.</p>
+  <form id="lockform"><input id="key" type="password" autocomplete="current-password" placeholder="Key" aria-label="Key"><button class="btn" type="submit">Unlock</button></form>
+  <div class="hint bad" id="lockmsg" role="status"></div>
+</section>
+<section class="make" id="makesec">
   <h2 class="large-title">New mesh</h2>
   <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose a picture">
     <div id="droptxt">
@@ -208,7 +222,7 @@ dialog.in::backdrop{opacity:1}
   <div class="hint" id="msg" role="status" aria-live="polite">Choose a picture to start.</div>
 </section>
 
-<section>
+<section id="nowsec">
   <h2 class="large-title">Now</h2>
   <div class="group now" id="nowcard">
     <div class="top"><div class="state" id="state">Ready</div><div class="pct" id="pct"></div></div>
@@ -242,6 +256,13 @@ const $=id=>document.getElementById(id);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)');
 let file=null, models=[], family='trellis', noWeights=false;
 const STAGES=7;
+let locked=false, timer=null;
+// Every call goes through here: a console with a key answers 401, and the page asks for the key instead of failing.
+async function api(u,o){ const r=await fetch(u,o); if(r.status===401){ showLock(true); throw new Error('locked'); } return r; }
+function showLock(on){ locked=on; $('lock').hidden=!on; $('makesec').hidden=on; $('nowsec').hidden=on; if(on){ pill('off','Locked'); setTimeout(()=>$('key').focus(),50); } }
+$('lockform').onsubmit=async e=>{ e.preventDefault(); const fd=new FormData(); fd.append('key',$('key').value);
+  try{ const r=await fetch('/api/login',{method:'POST',body:fd}); if(r.ok){ $('lockmsg').textContent=''; $('key').value=''; showLock(false); start(); } else $('lockmsg').textContent='That is not the key.'; }
+  catch(_){ $('lockmsg').textContent='No connection to the console.'; } };
 
 // ---- the form
 const drop=$('drop'), fin=$('file'), DROP0=$('droptxt').outerHTML;
@@ -280,9 +301,9 @@ $('go').onclick=async()=>{
   for(const k of ['weights','res','seed','steps','faces','uv']) fd.append(k,$(k).value);
   fd.append('label',$('label').value.trim()||file.name.replace(/\.[^.]+$/,'').slice(0,60));   // no name given: the picture's file name
   $('go').disabled=true; say('Sending...');
-  try{ const r=await fetch('/api/jobs',{method:'POST',body:fd}); const j=await r.json();
+  try{ const r=await api('/api/jobs',{method:'POST',body:fd}); const j=await r.json();
     if(r.ok){ say('In the queue.'); } else say(j.error||'Something went wrong.',true);
-  }catch(e){ say('No connection to the console.',true); }
+  }catch(e){ if(e.message!=='locked') say('No connection to the console.',true); }
   $('go').disabled=!file||noWeights; poll();
 };
 
@@ -292,7 +313,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 function pill(cls,txt){ $('pill').className='pill '+cls; $('pilltxt').textContent=txt; }
 async function poll(){
   try{
-    const [st,jobs]=await Promise.all([fetch('/api/status').then(r=>r.json()),fetch('/api/jobs').then(r=>r.json())]);
+    const [st,jobs]=await Promise.all([api('/api/status').then(r=>r.json()),api('/api/jobs').then(r=>r.json())]);
     $('pool').textContent=`GPU memory ${st.pool_free_gib.toFixed(1)} of ${st.pool_gib.toFixed(1)} GiB free · ${st.threads} threads`;
     const m=/^\[(\d)\/(\d)\]/.exec(st.stage||''); const n=m?+m[1]:0, tot=m?+m[2]:STAGES;
     let pct=st.busy?Math.max(3,(n-1)/tot*100):0; const f=/(\d+)\/(\d+)/.exec(st.progress||''); if(f&&m) pct+=(+f[1]/+f[2])/tot*100; pct=Math.min(99,pct);
@@ -306,12 +327,12 @@ async function poll(){
     $('stats').innerHTML=st.busy?`<span>Job <b>${esc(st.job)}</b></span><span>Elapsed <b>${fmt(st.elapsed)}</b></span>${left!==null?`<span>About <b>${fmt(left)}</b> left</span>`:''}`:'';
     const tail=$('tail'); tail.hidden=!st.busy; tail.textContent=(st.tail||[]).join('\n'); tail.scrollTop=1e9;
     renderJobs(jobs);
-  }catch(e){ pill('off','No connection'); $('state').textContent='Offline'; $('stagetxt').textContent='The console does not answer. Is PS5MG running?'; $('nowcard').classList.remove('run'); }
+  }catch(e){ if(e.message==='locked') return; pill('off','No connection'); $('state').textContent='Offline'; $('stagetxt').textContent='The console does not answer. Is PS5MG running?'; $('nowcard').classList.remove('run'); }
 }
-let showAll=false, lastKey='';
+let showAll=false, lastKey=''; const why={};
 function renderJobs(all){
   const jobs=showAll?all:all.slice(0,25);
-  const key=JSON.stringify([jobs.map(j=>[j.id,j.status,j.secs,j.glb_bytes]),showAll]);
+  const key=JSON.stringify([jobs.map(j=>[j.id,j.status,j.secs,j.glb_bytes]),showAll,Object.keys(why).map(k=>why[k]?1:0)]);
   if(key===lastKey) return; lastKey=key;
   if(!all.length){ $('jobs').innerHTML='<div class="empty"><b>No meshes yet</b>Drop a picture to make the first one.</div>'; return; }
   $('jobs').innerHTML=jobs.map(j=>{
@@ -319,16 +340,18 @@ function renderJobs(all){
     const chips=m.family?`<span class="chip">${esc(m.family)}</span><span class="chip">${esc(m.weights)}</span><span class="chip">${esc(m.res)}</span><span class="chip">${m.texture?'textured':'geometry'}</span>`:'';
     const img=j.image?`<img class="th" alt="" src="/api/jobs/${esc(j.id)}/image" loading="lazy">`:'<div class="th"></div>';
     const act=j.status==='done'&&j.glb_bytes?`<button class="btn sm" data-v="${esc(j.id)}" data-t="${title}">View</button>`:
-              j.status==='queued'?`<button class="btn sec sm" data-c="${esc(j.id)}">Cancel</button>`:'';
+              j.status==='queued'?`<button class="btn sec sm" data-c="${esc(j.id)}">Cancel</button>`:
+              j.status==='failed'?`<button class="btn sec sm" data-w="${esc(j.id)}">${why[j.id]?'Hide':'Why?'}</button>`:'';
     const facts=[j.secs?fmt(j.secs):'',j.glb_bytes?(j.glb_bytes/1048576).toFixed(1)+' MB':''].filter(Boolean).join(' · ');
-    return `<div class="job">${img}<div style="min-width:0"><div class="t">${title}</div><div class="m"><span class="s-${esc(j.status)}"><i class="dot"></i>${esc(j.status)}</span>${facts?`<span>${facts}</span>`:''}</div><div class="m">${chips}</div></div><div>${act}</div></div>`;
+    return `<div class="job">${img}<div style="min-width:0"><div class="t">${title}</div><div class="m"><span class="s-${esc(j.status)}"><i class="dot"></i>${esc(j.status)}</span>${facts?`<span>${facts}</span>`:''}</div><div class="m">${chips}</div></div><div>${act}</div>${why[j.id]?`<pre class="why">${why[j.id].map(esc).join("\n")||'The log has nothing to say about it.'}</pre>`:''}</div>`;
   }).join('')+(all.length>25?`<button class="more" id="more">${showAll?'Show fewer':'Show all '+all.length}</button>`:'');
 }
 $('jobs').onclick=async e=>{
   if(e.target.id==='more'){ showAll=!showAll; lastKey=''; poll(); return; }
   const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.w){ const id=b.dataset.w; if(why[id]) delete why[id]; else { try{ why[id]=(await (await api(`/api/jobs/${id}/log`)).json()).lines; }catch(_){ why[id]=['Could not read the log.']; } } lastKey=''; poll(); return; }
   if(b.dataset.v) openViewer(b.dataset.v,b.dataset.t,b);
-  if(b.dataset.c){ b.disabled=true; await fetch(`/api/jobs/${b.dataset.c}/cancel`,{method:'POST'}); lastKey=''; poll(); }
+  if(b.dataset.c){ b.disabled=true; await api(`/api/jobs/${b.dataset.c}/cancel`,{method:'POST'}); lastKey=''; poll(); }
 };
 
 // ---- the viewer sheet
@@ -384,8 +407,11 @@ $('wire').onchange=()=>obj&&obj.traverse(o=>{if(o.material)o.material.wireframe=
   vh.addEventListener('pointerup',end); vh.addEventListener('pointercancel',end);
 }
 
-fetch('/api/models').then(r=>r.json()).then(m=>{models=m;syncModels()}).catch(()=>{});
-poll(); setInterval(poll,2500);
+function start(){
+  api('/api/models').then(r=>r.json()).then(m=>{models=m;syncModels()}).catch(()=>{});
+  poll(); if(!timer) timer=setInterval(()=>{ if(!locked) poll(); },2500);
+}
+fetch('/api/auth').then(r=>r.json()).then(a=>{ if(a.required&&!a.ok) showLock(true); else start(); }).catch(()=>start());
 </script>
 </body>
 </html>

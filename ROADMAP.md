@@ -3,10 +3,13 @@
 ## 0.1.0 (this release)
 Picture to textured mesh on the console, web interface, PS5 screen, job queue, TRELLIS.2 (q4/q8) and Pixal3D.
 
+## 0.1.1
+- Optional key for the web interface and API; no wildcard CORS; cross-site POSTs refused.
+- A failed job shows the last lines of its log in the page.
+
 ## 0.2.0
-- Authentication for the web interface and API (optional key), no `/api/quit` without it.
 - Text input in the web interface: picture from PS5SD, then mesh, with no PC involved.
-- Job cancel for running jobs, better error messages (the log's last lines in the UI when a job fails).
+- Cancel a running job; clearer error messages in the page.
 - Pixal3D 1024 with texture for large objects (it stops without an error message on the sword and shield pictures).
 - Find out why a long-lived process gets slower after the first job (the title restarts itself after each job today).
 

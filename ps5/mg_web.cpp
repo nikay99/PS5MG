@@ -174,6 +174,73 @@ int clamp_int(const std::string & s, int lo, int hi, int def) {
     return std::max(lo, std::min(hi, atoi(s.c_str())));
 }
 
+// ---- access: an optional key in /data/PS5MG/api-key.txt (one line). No file, or an empty one: open, as before. ----
+std::string access_key() {
+    std::string k = slurp(std::string(kMgDir) + "/api-key.txt");
+    while (!k.empty() && (k.back() == '\n' || k.back() == '\r' || k.back() == ' ')) k.pop_back();
+    return k;
+}
+
+std::string to_hex(const std::string & s) {
+    static const char * digits = "0123456789abcdef";
+    std::string         o;
+    for (unsigned char c : s) {
+        o += digits[c >> 4];
+        o += digits[c & 15];
+    }
+    return o;
+}
+
+// No early exit at the first difference.
+bool same(const std::string & a, const std::string & b) {
+    unsigned char diff = a.size() != b.size();
+    for (size_t i = 0; i < a.size() && i < b.size(); i++) diff |= static_cast<unsigned char>(a[i] ^ b[i]);
+    return diff == 0;
+}
+
+std::string cookie_value(const httplib::Request & req, const std::string & name) {
+    const std::string h   = req.get_header_value("Cookie");
+    const std::string key = name + "=";
+    size_t            p   = 0;
+    while (p < h.size()) {
+        while (p < h.size() && (h[p] == ' ' || h[p] == ';')) p++;
+        if (h.compare(p, key.size(), key) == 0) {
+            const size_t e = h.find(';', p);
+            return h.substr(p + key.size(), e == std::string::npos ? std::string::npos : e - p - key.size());
+        }
+        p = h.find(';', p);
+        if (p == std::string::npos) break;
+    }
+    return {};
+}
+
+// The key in an Authorization: Bearer header (scripts) or in the cookie the page gets at login (pictures and downloads).
+bool authorized(const httplib::Request & req, const std::string & key) {
+    if (key.empty()) return true;
+    const std::string bearer = req.get_header_value("Authorization");
+    if (bearer.rfind("Bearer ", 0) == 0 && same(bearer.substr(7), key)) return true;
+    return same(cookie_value(req, "mgkey"), to_hex(key));
+}
+
+// The last lines of a job's log that say something, for the page to show why a job failed.
+std::string log_json(const std::string & id) {
+    const std::string        text = slurp(std::string(kMgDir) + "/logs/" + id + ".log");
+    std::vector<std::string> lines;
+    std::istringstream       is(text);
+    std::string              l;
+    while (std::getline(is, l)) {
+        if (l.empty() || l.find("ScePthread/System") != std::string::npos || l.find("radv/ps5 submissions") != std::string::npos ||
+            l.find("trellis:dbg") != std::string::npos) {
+            continue;
+        }
+        lines.push_back(l.substr(0, 300));
+        if (lines.size() > 14) lines.erase(lines.begin());
+    }
+    std::string o = "{\"lines\":[";
+    for (size_t i = 0; i < lines.size(); i++) o += (i ? ",\"" : "\"") + esc(lines[i]) + "\"";
+    return o + "]}";
+}
+
 }  // namespace
 
 void mg_web_run(int port) {
@@ -182,9 +249,50 @@ void mg_web_run(int port) {
     mkdir(kMgJobs, 0777);
     httplib::Server svr;
     svr.set_payload_max_length(64u << 20);
+    // No Access-Control-Allow-Origin: a page of another site, open in a browser on your network, must not be able to
+    // read from or drive the console. The web interface is served by the console itself, so it is same-origin.
     svr.set_post_routing_handler([](const httplib::Request &, httplib::Response & res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
         res.set_header("Cache-Control", "no-store");
+        res.set_header("X-Content-Type-Options", "nosniff");
+    });
+    svr.set_pre_routing_handler([](const httplib::Request & req, httplib::Response & res) {
+        auto refuse = [&](int code, const char * msg) {
+            res.status = code;
+            res.set_content(std::string("{\"error\":\"") + msg + "\"}", "application/json");
+            return httplib::Server::HandlerResponse::Handled;
+        };
+        // A POST has to come from this page: if the browser names an origin, it is the console's own address.
+        if (req.method == "POST") {
+            const std::string origin = req.get_header_value("Origin");
+            if (!origin.empty() && origin.find("//" + req.get_header_value("Host")) == std::string::npos) return refuse(403, "cross-site request");
+        }
+        if (req.path.rfind("/api/", 0) == 0 && req.path != "/api/auth" && req.path != "/api/login") {
+            if (!authorized(req, access_key())) {
+                usleep(400000);  // a wrong key costs time
+                return refuse(401, "key required");
+            }
+        }
+        return httplib::Server::HandlerResponse::Unhandled;
+    });
+    svr.Get("/api/auth", [](const httplib::Request & req, httplib::Response & res) {
+        const std::string key = access_key();
+        res.set_content(std::string("{\"required\":") + (key.empty() ? "false" : "true") + ",\"ok\":" +
+                            (authorized(req, key) ? "true" : "false") + "}",
+                        "application/json");
+    });
+    svr.Post("/api/login", [](const httplib::Request & req, httplib::Response & res) {
+        const std::string key = access_key();
+        if (!key.empty() && !same(field(req, "key", ""), key)) {
+            usleep(400000);
+            res.status = 401;
+            res.set_content("{\"error\":\"wrong key\"}", "application/json");
+            return;
+        }
+        if (!key.empty()) res.set_header("Set-Cookie", "mgkey=" + to_hex(key) + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000");
+        res.set_content("{\"ok\":true}", "application/json");
+    });
+    svr.Get(R"(/api/jobs/([A-Za-z0-9_-]+)/log)", [](const httplib::Request & req, httplib::Response & res) {
+        res.set_content(log_json(req.matches[1].str()), "application/json");
     });
     svr.Get("/", [](const httplib::Request &, httplib::Response & res) {
         res.set_content(reinterpret_cast<const char *>(mg_index_html), mg_index_html_len, "text/html; charset=utf-8");

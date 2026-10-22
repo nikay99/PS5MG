@@ -105,7 +105,7 @@ Glass and flames get lost in the mesh; that is the model, not the console.
   (leftover worker threads are the guess). A long soak test of the self-restart is still to do.
 - Pixal3D at 1024 with texture ran for one picture and stopped without an error on two others (probably memory).
 - One job (a chest, seed 5) took twice as long as its peers, unexplained.
-- The web interface has no authentication yet: use it on a trusted network only.
+- The web interface is open unless you set a key (`tools/mg.sh setkey <key>`, see [docs/API.md](docs/API.md)); it is plain HTTP, so use it on your own network.
 - During one night's run the CPU stages turned 2.5 times slower for hours and the console later refused to start
   titles; a reboot of the console cured both. Whether the self-restart plays a part is not known.
 
