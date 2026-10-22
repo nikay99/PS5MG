@@ -19,7 +19,7 @@ case ${1:-} in
        curl -sS --ftp-create-dirs -T /tmp/mg-$2.job "$F/jobs/$2.job.tmp" &&
        curl -sS "ftp://$H:2121/" -Q "RNFR /data/PS5MG/jobs/$2.job.tmp" -Q "RNTO /data/PS5MG/jobs/$2.job" -o /dev/null && echo "queued $2" ;;
   state)
-    l=$(curl -sS "$F/jobs/" 2>/dev/null | awk '{print $NF}' | grep "^$2\." | head -1)
+    l=$(curl -sS "$F/jobs/" 2>/dev/null | awk '{print $NF}' | grep "^$2\." | grep -v -E "\.(meta|result)$" | head -1)
     case $l in *.job) echo queued ;; *.running) echo running ;; *.done) echo done ;; *.failed) echo failed ;; *.cancelled) echo cancelled ;; *) echo none ;; esac ;;
   wait)
     max=${3:-3600}; t=0

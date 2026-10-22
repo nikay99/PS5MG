@@ -32,12 +32,12 @@ obj.traverse(o=>{if(o.isMesh){if(CLAY){o.material=new THREE.MeshStandardMaterial
 const pivot=new THREE.Group();pivot.add(obj);scene.add(pivot);
 const box=new THREE.Box3().setFromObject(pivot);const c=box.getCenter(new THREE.Vector3());const s=box.getSize(new THREE.Vector3());
 obj.position.sub(c);const size=Math.max(s.x,s.y,s.z);
-const NV=%NV%;const cam=new THREE.PerspectiveCamera(30,(W/NV)/Hh,0.01,100);cam.position.set(0,size*0.3,size*2.15);cam.lookAt(0,0,0);
+const NV=%NV%;const cam=new THREE.PerspectiveCamera(30,(W/NV)/Hh,0.01,100);cam.position.set(0,size*0.3,size*%DIST%);cam.lookAt(0,0,0);
 const views=NV==1?[[-0.6,0]]:[[-0.8,0],[0.3,0],[2.3,0]];
 const sc=[];r.setScissorTest(true);
 views.forEach((v,i)=>{pivot.rotation.y=v[0];const x=i*(W/NV);r.setViewport(x,0,W/NV,Hh);r.setScissor(x,0,W/NV,Hh);r.render(scene,cam);});
 window.DONE=true;
-</script>""".replace("%BG%", "transparent" if alpha else "#eceef1").replace("%W%", "1000" if single else "1800").replace("%H%", "1000" if single else "600").replace("%ALPHA%", "true" if alpha else "false").replace("%NV%", "1" if single else "3").replace("%CLAY%", "true" if clay else "false").replace("%ROTX%", str(rotx))
+</script>""".replace("%BG%", "transparent" if alpha else "#eceef1").replace("%W%", "1000" if single else "1800").replace("%H%", "1000" if single else "600").replace("%ALPHA%", "true" if alpha else "false").replace("%DIST%", os.environ.get("RENDER_DIST", "2.55")).replace("%NV%", "1" if single else "3").replace("%CLAY%", "true" if clay else "false").replace("%ROTX%", str(rotx))
 open(os.path.join(d, "_render.html"), "w").write(html)
 os.replace(glb, os.path.join(d, "model.glb")) if False else None
 import shutil; shutil.copyfile(glb, os.path.join(d, "model.glb"))

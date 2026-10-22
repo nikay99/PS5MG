@@ -26,6 +26,26 @@ Title id `PPSA99577`.
 
 ![lantern](docs/images/mesh-lantern.jpg)
 
+## Examples
+
+Every picture below was drawn on the console too: PS5SD running Z-Image Turbo (about 85 s each), then PS5MG (1:44 to 4:04 per
+mesh, 150k faces, 1024 px texture). The renders are the GLB files as they come out, lit in three.js (`tools/render-glb.py`).
+
+### Game assets
+
+Textured GLB files (a 1024 px colour texture on a box-projected UV layout); open them in Blender, Godot, Unity or Unreal.
+
+![game assets: input picture and three views of the mesh](docs/images/gallery-game-assets.jpg)
+
+### 3D printing and figurines
+
+The same meshes without their texture, as grey clay: this is the geometry you would slice. I checked the meshes only on the
+computer, not on a printer: they are closed surfaces (no open edges) but a few edges are non-manifold (38 on the dragon, up to
+a few thousand on others), so let the slicer's repair (PrusaSlicer, Bambu Studio) or Meshmixer fix them, and look at thin parts
+before you print. The textures are not needed for printing.
+
+![3D print figurines: input picture and three views of the clay mesh](docs/images/gallery-3d-print.jpg)
+
 ## How fast
 
 Textured mesh, TRELLIS.2 q4, resolution 512, 8 steps, 150k faces, 1024 px texture, measured on a console:

@@ -14,6 +14,10 @@ a plain background, seed 1234, 8 steps, `--fa-fast --box-uv`, 150k faces, 1024 p
 | potion | 2:22 |
 | blaster | 1:27 |
 
+The README's example set (pictures drawn by PS5SD with Z-Image Turbo, same settings): helmet 2:07, gargoyle 2:14,
+dragon 2:08, crate 4:04, mushroom 2:58, chess knight 2:03, robot 2:20, anvil 1:44. The crate is the slow one: a large
+flat-sided object with a lot of surface to texture.
+
 ## Variants (lantern, sword)
 
 | variant | lantern | sword |
