@@ -27,6 +27,10 @@ accounts, no weights hosted here. Every item below should be something you can s
 - The log is written by a thread of its own: a slow write no longer holds up the job.
 - A stale `quit` file no longer ends a freshly started title.
 
+## 0.2.4: look at a mesh on the TV
+- Press Cross on the console's screen to see the newest mesh on the TV: the left stick turns it, L2/R2 zoom, L1/R1 pick another, Circle goes back.
+- The screen shows the button hints. No job starts while a mesh is on the TV.
+
 ## 0.3.0: rock solid
 - Find why a second job in the same process runs slower, so the restart can go.
 - Pixal3D with texture at 1024 for large objects (it stops without an error message on the sword and shield pictures).

@@ -16,12 +16,17 @@
 #include <set>
 #include <sstream>
 
+#include <GL/glcorearb.h>
+
 #include "app_status.hpp"
+#include "core/input.hpp"
 #include "dashboard.hpp"
 #include "display.hpp"
 #include "gfx/renderer.hpp"
 #include "image_file.hpp"
+#include "mesh_view.hpp"
 #include "mg_state.hpp"
+#include "platform/ps5/pad.hpp"
 
 extern "C" {
 int sceKernelUsleep(unsigned int microseconds);
@@ -30,7 +35,7 @@ int sceKernelUsleep(unsigned int microseconds);
 namespace {
 
 constexpr const char * kFont    = "/app0/assets/fonts/dejavu-sans-mono.huifont";
-constexpr const char * kVersion = "0.2.3";
+constexpr const char * kVersion = "0.2.4";
 constexpr int          kWebPort = 7870;
 
 ps5sd::AppStatus g_status;
@@ -38,6 +43,14 @@ ps5sd::Display   g_display;
 hui::gfx::Renderer g_renderer;
 ps5sd::Dashboard g_view;
 bool             g_ui_ok = false;
+hui::ps5::Pad    g_pad;
+hui::InputTracker g_input;
+ps5mg::MeshView  g_mesh;
+bool             g_viewing = false;
+std::vector<std::string> g_models;  // ids with a GLB in out/, oldest first
+size_t           g_model_at = 0;
+double           g_view_last_input = 0;
+constexpr double kViewIdleSeconds = 120;  // the view closes itself, so a forgotten one never holds jobs back
 
 std::string slurp(const std::string & p) {
     std::ifstream f(p, std::ios::binary);
@@ -82,6 +95,58 @@ std::string job_label(const std::string & id) {
     return id;
 }
 
+std::vector<std::string> list_models() {
+    std::vector<std::string> ids;
+    if (DIR * d = opendir(kMgOut)) {
+        while (dirent * e = readdir(d)) {
+            const std::string n = e->d_name;
+            if (n.size() > 4 && n.compare(n.size() - 4, 4, ".glb") == 0) ids.push_back(n.substr(0, n.size() - 4));
+        }
+        closedir(d);
+    }
+    std::sort(ids.begin(), ids.end());
+    return ids;
+}
+
+// Loads g_models[g_model_at]; false (and the view closed) when it cannot be shown.
+bool show_model() {
+    const std::string id = g_models[g_model_at];
+    std::string err;
+    if (g_mesh.load(std::string(kMgOut) + "/" + id + ".glb", std::string(kMgOut) + "/" + id + "_base.png", err)) return true;
+    std::printf("ps5mg: view %s: %s\n", id.c_str(), err.c_str());
+    return false;
+}
+
+void close_view() {
+    g_mesh.unload();
+    g_viewing = false;
+    g_mg.viewing = false;
+}
+
+// One frame of the model view: the stick turns, L2/R2 zoom, L1/R1 pick another model, Circle leaves.
+void view_frame(const hui::InputFrame & in, float dt) {
+    using hui::Action;
+    if (in.pressed || in.stick_x != 0 || in.stick_y != 0 || in.trigger_l > 0 || in.trigger_r > 0) g_view_last_input = mg_now();
+    const int step = in.is_pressed(Action::page_next) ? 1 : in.is_pressed(Action::page_prev) ? -1 : 0;
+    if (in.is_pressed(Action::back) || mg_now() - g_view_last_input > kViewIdleSeconds) {
+        close_view();
+        return;
+    }
+    if (step != 0 && !g_models.empty()) {
+        g_model_at = (g_model_at + g_models.size() + step) % g_models.size();
+        if (!show_model()) { close_view(); return; }
+    }
+    g_mesh.turn((in.stick_x + in.stick2_x) * dt * 2.5f, (in.stick_y + in.stick2_y) * dt * 2.0f);
+    g_mesh.zoom((in.trigger_l - in.trigger_r) * dt * 2.5f);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    g_mesh.draw(1920, 1080);
+    // The title and the button hints over it.
+    const std::string title = std::to_string(g_model_at + 1) + " / " + std::to_string(g_models.size()) + "   " +
+                              job_label(g_models[g_model_at]);
+    g_view.compose_viewer(g_renderer, title, { { "Left stick", "Turn" }, { "L2 / R2", "Zoom" }, { "L1 / R1", "Other mesh" }, { "Circle", "Back" } });
+    g_renderer.present(0, 1920, 1080);
+}
+
 }  // namespace
 
 bool mg_screen_open() {
@@ -91,6 +156,7 @@ bool mg_screen_open() {
         return false;
     }
     g_ui_ok = g_renderer.init() && g_view.load(g_renderer, kFont);
+    std::printf("ps5mg: pad %s\n", g_pad.open() ? "open" : "not available");
     std::printf("ps5mg: screen %s\n", g_ui_ok ? "ready" : "failed");
     g_status.set_model("TRELLIS.2 (q4)");
     g_status.set_port(kWebPort);
@@ -105,7 +171,7 @@ void mg_screen_frame() {
     static std::string shown_job;
     static size_t      shown_tail = 0;
     static std::set<std::string> seen;
-    static double      next_scan = 0, next_addr = 0;
+    static double      next_scan = 0, next_addr = 0, next_models = 0;
     static std::string address;
 
     // What the worker says (a copy: the mutex is held briefly).
@@ -217,6 +283,39 @@ void mg_screen_frame() {
     }
 
     const auto now = clock::now();
+    const float dt = std::chrono::duration<float>(now - last).count();
+
+    // The controller: Cross on an idle title opens the newest model.
+    hui::PadSample samples[64];
+    const size_t   n_samples = g_pad.read(samples);
+    const hui::InputFrame in = g_input.update({samples, n_samples}, static_cast<uint64_t>(mg_now() * 1e6));
+    if (!g_viewing && job.empty() && in.is_pressed(hui::Action::confirm)) {
+        g_models = list_models();
+        if (!g_models.empty()) {
+            g_model_at        = g_models.size() - 1;
+            g_mg.viewing      = true;  // before the load: the worker takes no job from here on
+            g_view_last_input = mg_now();
+            g_viewing         = show_model();
+            if (!g_viewing) g_mg.viewing = false;
+        }
+    }
+    if (g_viewing) {
+        last = now;
+        view_frame(in, dt);
+        if (!g_display.swap()) sceKernelUsleep(16 * 1000);
+        return;
+    }
+    // Cross opens the view when idle and a mesh exists (checked with the scan below, every 4 s).
+    static bool have_models = false;
+    if (mg_now() >= next_models) {
+        next_models = mg_now() + 4;
+        have_models = !list_models().empty();
+    }
+    if (job.empty() && have_models) {
+        g_view.set_hints({ { "Cross", "View newest mesh" } });
+    } else {
+        g_view.set_hints({});
+    }
     g_view.update(g_status.snapshot(), std::chrono::duration<float>(now - last).count());
     last = now;
     g_view.compose(g_renderer, kVersion);

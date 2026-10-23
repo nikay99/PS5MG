@@ -122,12 +122,12 @@ app_objects=("$obj/app_crt.o" "$obj/app_cpp_runtime.o" "$obj/mg_main.o" "$obj/mg
 gl=
 if [ $display = 1 ]; then
     scr=$W/ps5/screen
-    for src in display dashboard qrcodegen app_status; do
+    for src in display dashboard qrcodegen app_status glb_read mesh_view; do
         cxx "${eh[@]}" "${kitinc[@]}" -I "$scr" -c "$scr/$src.cpp" -o "$obj/$src.o"
     done
     cxx "${eh[@]}" -I "$T/thirdparty/stb" -I "$scr" -c "$scr/image_file.cpp" -o "$obj/image_file.o"
     cxx "${eh[@]}" "${kitinc[@]}" -I "$scr" -I "$W/ps5" -c "$W/ps5/mg_screen.cpp" -o "$obj/mg_screen.o"
-    app_objects+=("$obj/display.o" "$obj/dashboard.o" "$obj/qrcodegen.o" "$obj/app_status.o" "$obj/image_file.o" "$obj/mg_screen.o")
+    app_objects+=("$obj/display.o" "$obj/dashboard.o" "$obj/qrcodegen.o" "$obj/app_status.o" "$obj/glb_read.o" "$obj/mesh_view.o" "$obj/image_file.o" "$obj/mg_screen.o")
 
     # ps5-opengl is a Mesa of its own and shares thousands of symbol names with RADV's: linked into one object
     # with only the GL and EGL API left global, the two never meet.

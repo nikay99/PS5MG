@@ -17,6 +17,7 @@
 #include "gfx/gl_program.hpp"
 #include "gfx/renderer.hpp"
 #include "image_file.hpp"
+#include "mesh_view.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -86,7 +87,7 @@ int main(int argc, char ** argv) {
         s.job_s                      = job_s;
         s.last_job_s                 = last_job_s >= 0 ? last_job_s : s.last_job_s;
         dashboard.update(s, 1.0f / 60.0f);
-        dashboard.compose(renderer, "0.2.3");
+        dashboard.compose(renderer, "0.2.4");
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -109,6 +110,9 @@ int main(int argc, char ** argv) {
         return 1;
     }
     bool ok = true;
+    const std::vector<ps5sd::Dashboard::Hint> viewer_hints = { { "Left stick", "Turn" }, { "L2 / R2", "Zoom" },
+                                                               { "L1 / R1", "Other mesh" }, { "Circle", "Back" } };
+    dashboard.set_hints({ { "Cross", "View newest mesh" } });
 
     // 1. Ready, the address known.
     status.set_port(7870);
@@ -153,5 +157,23 @@ int main(int argc, char ** argv) {
     dashboard.toggle_log();
     frames(30);
     ok = capture("05-log", 0, 113.3) && ok;
+
+    // 6. A model on the screen (the repository's out/ folder, when it has the blaster).
+    ps5mg::MeshView mesh;
+    std::string     err;
+    if (mesh.load("/src/out/z_lantern.glb", "/src/out/z_lantern_base.png", err)) {
+        mesh.turn(0.5f, 0.0f);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        mesh.draw(width, height);
+        dashboard.compose_viewer(renderer, "2 / 5   oil lantern", viewer_hints);
+        renderer.present(framebuffer, width, height);
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+        for (size_t i = 3; i < pixels.size(); i += 4) pixels[i] = 255;
+        stbi_flip_vertically_on_write(1);
+        ok = stbi_write_png((output + "/06-viewer.png").c_str(), width, height, 4, pixels.data(), width * 4) != 0 && ok;
+        std::fprintf(stderr, "wrote 06-viewer.png, GL error 0x%x\n", glGetError());
+    } else {
+        std::fprintf(stderr, "no viewer picture: %s\n", err.c_str());
+    }
     return ok ? 0 : 1;
 }

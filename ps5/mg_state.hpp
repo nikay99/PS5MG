@@ -1,5 +1,6 @@
 // What the worker (mg_main.cpp) tells the web server (mg_web.cpp) and what the web server needs of the title.
 #pragma once
+#include <atomic>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@ struct MgState {
     std::vector<std::string> tail;      // last log lines
     double                   pool_free_gib = 0, pool_gib = 0;
     unsigned                 threads = 0;
+    std::atomic<bool>        viewing{false};  // a model is on the TV: the worker starts no job meanwhile
 };
 
 extern MgState g_mg;

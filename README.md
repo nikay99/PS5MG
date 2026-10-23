@@ -63,7 +63,9 @@ Title id `PPSA99577`.
 - **A REST API** for scripts: the page's **API** button shows ready-made `curl` calls for your console (with a copy button and a
   hint whether it is protected by a key); see [Use it from a script](#use-it-from-a-script) and [docs/API.md](docs/API.md).
 - **The PS5 screen:** PS5SD's dashboard (state, QR code of the web address, running job with its picture, time left,
-  memory, log).
+  memory, log). **Look at a mesh on the TV:** when the title is idle, press **Cross** on the controller to see the newest mesh; the
+  left stick turns it, **L2/R2** zoom, **L1/R1** pick another mesh, **Circle** goes back. A mesh left on the screen closes itself after
+  two minutes, and no job starts while one is shown.
 - **Two model families:** [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) (textured meshes, the default) and
   [Pixal3D](https://huggingface.co/vegax87/Pixal3D) (a pixel-aligned TRELLIS.2 fine-tune, closer to the picture, geometry only at 512).
 - A job queue on disk, so the console can be driven by files over FTP too (`tools/mg.sh`, `tools/run-queue.sh`).

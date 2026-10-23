@@ -60,6 +60,13 @@ class Dashboard {
     void toggle_log() { log_open_ = !log_open_; }
     bool log_open() const { return log_open_; }
 
+    // The button hints along the bottom edge: {button, what it does}, e.g. {"Cross", "View newest mesh"}.
+    using Hint = std::pair<std::string, std::string>;
+    void set_hints(std::vector<Hint> hints) { hints_ = std::move(hints); }
+
+    // Queues what goes over a model on the screen (the caller drew it before): the title and the hints.
+    void compose_viewer(hui::gfx::Renderer & renderer, const std::string & title, const std::vector<Hint> & hints);
+
     // Skips the entrance animation and the springs' travel (the PC preview
     // calls it before a picture; the console never does).
     void settle();
@@ -91,6 +98,7 @@ class Dashboard {
     // Drawing, all const: the frame is a pure function of the state.
     void draw(hui::gfx::DrawList & list, const char * version) const;
     void draw_header(hui::gfx::DrawList & list, const char * version) const;
+    void draw_hints(hui::gfx::DrawList & list, const std::vector<Hint> & hints, float baseline) const;
     void draw_server(hui::gfx::DrawList & list, const hui::gfx::Rect & r) const;
     void sync_qr();
     // The QR code of the web UI's address, its right edge at right, centred on cy; its width.
@@ -121,6 +129,7 @@ class Dashboard {
     float               age_   = 0;  // the same, for the entrance
     bool                log_open_ = false;
     bool                loaded_   = false;
+    std::vector<Hint>   hints_;
 
     // The state's colour, eased, so a change of state recolours the screen.
     hui::ui::SpringColor accent_;

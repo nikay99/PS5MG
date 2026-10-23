@@ -430,9 +430,9 @@ void * run(void *) {
     }
     struct stat st;
     while (stat(kQuit, &st) != 0) {
-        const std::string job = next_job();
+        const std::string job = g_mg.viewing ? "" : next_job();
         if (job.empty()) {
-            sleep(2);
+            sleep(g_mg.viewing ? 1 : 2);
             continue;
         }
         const std::string path = std::string(kJobs) + "/" + job;

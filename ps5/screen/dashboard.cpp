@@ -565,6 +565,37 @@ void Dashboard::draw(DrawList & list, const char * version) const {
     draw_memory(list, kMemory);
     draw_log_tile(list, kLogTile);
     end();
+    begin();
+    draw_hints(list, hints_, 1042);
+    end();
+}
+
+// A row of "[KEY] what it does", left to right from the margin.
+void Dashboard::draw_hints(DrawList & list, const std::vector<Hint> & hints, float baseline) const {
+    float x = 96;
+    for (const Hint & h : hints) {
+        const std::string key = hui::ui::upper(h.first);
+        const float       kw  = fonts_.semibold.font->measure(key, 17) + 3.0f * (float) key.size() + 28;
+        const Rect        pill{ x, baseline - 27, kw, 38 };
+        list.rounded_rect(pill, 19, with_a(kInk, 0.10f));
+        list.bordered_rect(pill, 19, kClear, 1.5f, with_a(kInk, 0.22f));
+        caps(list, key, pill.x + 14, baseline, 17, kInk);
+        const float lw = hui::ui::text(list, fonts_.regular, h.second, pill.x + kw + 14, baseline, 22, with_a(kInk, kMuted));
+        x += kw + 14 + lw + 44;
+    }
+}
+
+void Dashboard::compose_viewer(hui::gfx::Renderer & renderer, const std::string & title, const std::vector<Hint> & hints) {
+    scene_.clear();
+    if (loaded_) {
+        const float w = fonts_.semibold.font->measure(title, 26);
+        const Rect  bar{ 80, 56, w + 48, 52 };
+        scene_.rounded_rect(bar, 26, with_a(kBlack, 0.45f));
+        hui::ui::text(scene_, fonts_.semibold, title, 104, 92, 26, kInk);
+        draw_hints(scene_, hints, 1042);
+    }
+    renderer.begin();
+    renderer.draw(scene_);
 }
 
 void Dashboard::draw_header(DrawList & list, const char * version) const {
